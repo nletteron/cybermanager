@@ -1,0 +1,133 @@
+.debts-page,
+.debts-page .stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.debts-page .hero-actions {
+  margin-top: 0.7rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.debt-filters {
+  grid-template-columns: max-content;
+}
+
+.debt-filters select {
+  width: auto;
+  min-width: 8.5rem;
+  max-width: 11rem;
+}
+
+.debts-page .panel {
+  background: #fff;
+  border-radius: 1.2rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.debts-page .panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.debts-page .panel-header h3,
+.debts-page .panel-header p {
+  margin: 0;
+}
+
+.debt-total,
+.debt-label,
+.debt-amount {
+  color: #b91c1c;
+}
+
+.debt-label {
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.debt-label span:last-child {
+  display: block;
+  line-height: 1.2;
+}
+
+.debts-page .table {
+  table-layout: fixed;
+}
+
+.debts-page .table tbody tr {
+  height: 3rem;
+}
+
+.debts-page .table th,
+.debts-page .table td {
+  padding: 0.24rem 0.52rem !important;
+}
+
+.cell-content {
+  display: flex;
+  align-items: center;
+  min-height: 1.85rem;
+}
+
+.debt-amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.comment-cell .cell-content,
+.settle-cell .cell-content {
+  justify-content: flex-start;
+}
+
+.comment-cell input {
+  width: 100%;
+  max-width: 13rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 0.34rem 0.68rem !important;
+  font: inherit;
+  background: #fff;
+  min-height: 1.8rem;
+}
+
+.settle-cell button {
+  padding: 0.46rem 0.72rem !important;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1000px) {
+  .debt-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .debts-page .table thead {
+    display: none;
+  }
+
+  .debts-page .table,
+  .debts-page .table tbody,
+  .debts-page .table tr,
+  .debts-page .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .debts-page .table tr {
+    padding: 0.35rem 0;
+  }
+
+  .debts-page .table td {
+    border-bottom: 0;
+    padding: 0.28rem 0 !important;
+  }
+
+  .comment-cell input {
+    max-width: none;
+  }
+}

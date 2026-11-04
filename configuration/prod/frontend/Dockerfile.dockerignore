@@ -1,0 +1,14 @@
+**
+!frontend/
+!frontend/**
+!configuration/
+!configuration/prod/
+!configuration/prod/frontend/
+!configuration/prod/frontend/**
+**/node_modules/
+**/dist/
+**/.angular/
+**/.env
+**/.env.*
+**/*.env
+**/*.log

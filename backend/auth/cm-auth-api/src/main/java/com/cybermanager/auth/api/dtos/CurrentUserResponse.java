@@ -10,5 +10,6 @@ public record CurrentUserResponse(
         String lastName,
         Set<String> roles
 ) {
+
 }
 

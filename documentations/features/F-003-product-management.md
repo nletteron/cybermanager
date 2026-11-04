@@ -4,6 +4,10 @@
 
 Gestion des produits vendus par le cybercafe
 
+## Catégorisation
+
+La catégorie d'un produit est une référence vers une catégorie existante. Le formulaire de création ou de modification présente une liste de sélection et n'accepte plus de libellé libre. La gestion des catégories et de leur TVA est décrite dans `F-025-product-category-management.md`.
+
 ## Contexte
 
 Le cybercafe vend des produits aux clients, par exemple des boissons, snacks, accessoires ou services complementaires.
@@ -103,6 +107,15 @@ Permettre la creation, la consultation, la modification, l'activation et la desa
 - product-form
 - product-status-badge
 - product-category-filter
+- `cm-button` pour les actions de creation, edition, pagination, fermeture, sauvegarde, statut et suppression
+- `cm-input` pour les filtres texte, le nom et le prix
+- `cm-select` pour le statut, la taille de page et la categorie produit
+- `cm-textarea` pour la description produit
+
+### Design system frontend
+- l'ecran catalogue consomme les primitives partagees `cm-button`, `cm-input`, `cm-select` et `cm-textarea`
+- les champs de formulaire restent compatibles avec `formControlName`
+- les controles heritent des styles globaux du design system et les styles locaux ne portent plus que les dimensions propres a l'ecran produit
 
 ### Navigation et comportements UI
 - la liste se charge a l'ouverture de l'ecran

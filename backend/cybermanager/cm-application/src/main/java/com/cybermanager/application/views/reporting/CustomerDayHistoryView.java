@@ -12,5 +12,5 @@ public record CustomerDayHistoryView(
         BigDecimal totalCollected,
         BigDecimal totalDebtCreated
 ) {
-    public record SaleActivityView(String label, int quantity, BigDecimal totalPrice) {}
+
 }

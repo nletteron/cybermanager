@@ -45,6 +45,7 @@ Permettre, apres arret d'une session, d'ajouter des ventes rattachees a cette se
 - CreateProductSale
 - CreateSubscriptionSale
 - DeleteSubscriptionSale
+- DeleteSessionEntry
 - PaySession
 - GetCustomerDetails
 
@@ -53,6 +54,8 @@ Permettre, apres arret d'une session, d'ajouter des ventes rattachees a cette se
 - POST /api/sales/products
 - POST /api/sales/subscriptions
 - DELETE /api/sales/{id}/subscription-session
+- DELETE /api/sessions/{id}/purchases/{saleId}
+- DELETE /api/sessions/{id}/debts/{debtId}
 - POST /api/sessions/{id}/pay
 
 ### Contraintes API attendues
@@ -60,6 +63,9 @@ Permettre, apres arret d'une session, d'ajouter des ventes rattachees a cette se
 - les ventes rattachees a une session portent `customerId` et `sessionId`
 - le paiement de session accepte `amountPaid`, `subscriptionOfferIds`, `createSubscriptionDebt`
 - le backend reste la source de verite du calcul final et du credit restant
+- chaque achat expose son identifiant `saleId` et l'identifiant `debtId` de sa dette ouverte eventuelle ; deux achats identiques ne partagent pas une meme dette
+- le detail client expose aussi les lignes de chaque achat (`label`, `quantity`, `unitPrice`, `totalPrice`) telles qu'elles sont enregistrees ; cela permet d'afficher les quantites de produits et d'abonnements ainsi qu'un regroupement purement visuel dans les sessions, sans modifier la persistance
+- la suppression d'une ligne de session controle le client concerne, cible uniquement les identifiants demandes et recalcule les montants apres rechargement
 
 ## Frontend
 

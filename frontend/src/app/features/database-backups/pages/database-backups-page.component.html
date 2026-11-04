@@ -1,0 +1,88 @@
+<section class="page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Administration</p>
+      <h2>Restauration des données</h2>
+      <p class="lede">Exportez une sauvegarde PostgreSQL ou restaurez un dump disponible.</p>
+    </div>
+    <div class="hero-actions">
+      <button type="button" (click)="exportDatabase()" [disabled]="exporting() || restoring()">
+        {{ exporting() ? 'Export en cours...' : 'Exporter la base' }}
+      </button>
+      <button type="button" class="secondary" (click)="fileInput.click()" [disabled]="uploading() || restoring()">
+        {{ uploading() ? 'Import en cours...' : 'Importer un dump' }}
+      </button>
+      <input #fileInput class="file-input" type="file" accept=".dump,application/octet-stream" (change)="importDump($event)" />
+    </div>
+  </header>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+  <p class="success" *ngIf="success()">{{ success() }}</p>
+
+  <article class="panel">
+    <div class="section-head">
+      <div class="section-title-group">
+        <h3>Dumps disponibles</h3>
+        <span class="count">{{ dumps().length }}</span>
+      </div>
+      <div class="section-tools">
+        <button type="button" class="ghost" (click)="load()" [disabled]="loading()">Actualiser</button>
+        <button
+          type="button"
+          class="danger"
+          (click)="restoreSelected()"
+          [disabled]="!selectedFileName() || restoring() || exporting() || uploading()"
+        >
+          {{ restoring() ? 'Restauration...' : 'Restaurer le dump sélectionné' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="table-shell" *ngIf="dumps().length > 0; else emptyState">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Sélection</th>
+            <th>Fichier</th>
+            <th>Taille</th>
+            <th>Modifié le</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let dump of dumps()"
+            [class.selected]="selectedFileName() === dump.fileName"
+            (click)="select(dump.fileName)"
+          >
+            <td>
+              <input
+                type="radio"
+                name="selectedDump"
+                [checked]="selectedFileName() === dump.fileName"
+                (change)="select(dump.fileName)"
+                [attr.aria-label]="'Selectionner ' + dump.fileName"
+              />
+            </td>
+            <td><strong>{{ dump.fileName }}</strong></td>
+            <td>{{ formatSize(dump.size) }}</td>
+            <td>{{ dump.modifiedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+            <td>
+              <button type="button" class="ghost compact" (click)="$event.stopPropagation(); download(dump.fileName)">
+                Télécharger
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyState>
+      <p class="muted">{{ loading() ? 'Chargement des dumps...' : 'Aucun dump disponible.' }}</p>
+    </ng-template>
+  </article>
+
+  <p class="warning">
+    La restauration remplace les données actuelles du schéma. Vérifiez le dump sélectionné avant de confirmer.
+  </p>
+</section>

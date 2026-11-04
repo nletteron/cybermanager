@@ -10,4 +10,5 @@ public record GeneratedArchiveFileResponse(
         String generatedBy,
         LocalDateTime generatedAt
 ) {
+
 }

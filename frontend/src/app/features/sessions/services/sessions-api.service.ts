@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../../environments/environment';
 import type { CafeSession } from '../models/session.models';
+import type { SessionDisplayPreference } from '../models/session-display-preference.models';
 
 @Injectable({ providedIn: 'root' })
 export class SessionsApiService {
@@ -15,6 +16,14 @@ export class SessionsApiService {
 
   current() {
     return this.http.get<{ sessions: CafeSession[] }>(`${this.baseUrl}/current`);
+  }
+
+  displayPreference() {
+    return this.http.get<SessionDisplayPreference | null>(`${this.baseUrl}/display-preference`);
+  }
+
+  configureDisplayPreference(groupEntries: boolean) {
+    return this.http.put<SessionDisplayPreference>(`${this.baseUrl}/display-preference`, { groupEntries });
   }
 
   start(payload: { customerId?: string; customerName?: string }) {
@@ -43,6 +52,14 @@ export class SessionsApiService {
 
   resume(sessionId: string) {
     return this.http.post<CafeSession>(`${this.baseUrl}/${sessionId}/resume`, {});
+  }
+
+  deletePurchase(sessionId: string, saleId: string) {
+    return this.http.delete<void>(`${this.baseUrl}/${sessionId}/purchases/${saleId}`);
+  }
+
+  deleteDebt(sessionId: string, debtId: string) {
+    return this.http.delete<void>(`${this.baseUrl}/${sessionId}/debts/${debtId}`);
   }
 
   fileName(response: HttpResponse<Blob>): string {

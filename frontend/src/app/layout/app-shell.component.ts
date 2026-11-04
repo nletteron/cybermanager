@@ -23,6 +23,7 @@ import { SessionService } from '../core/services/session.service';
             </button>
             <div class="nav-children">
               <a routerLink="/products" routerLinkActive="active">Produits</a>
+              <a routerLink="/categories" routerLinkActive="active">Catégories</a>
               <a routerLink="/subscription-offers" routerLinkActive="active">Abonnements</a>
               <a routerLink="/sales" routerLinkActive="active">Ventes</a>
               <a routerLink="/sales/pricing" routerLinkActive="active">Tarifs Temps</a>
@@ -41,6 +42,7 @@ import { SessionService } from '../core/services/session.service';
               <a routerLink="/invoices" routerLinkActive="active">Factures</a>
               <a routerLink="/archiving" routerLinkActive="active">Archivage</a>
               <a routerLink="/reporting" routerLinkActive="active">Historique</a>
+              <a *ngIf="session.user()?.roles?.includes('ADMIN')" routerLink="/database-backups" routerLinkActive="active">Restauration des données</a>
             </div>
           </div>
         </nav>
@@ -92,8 +94,8 @@ export class AppShellComponent {
   private initialMenus(): { products: boolean; functions: boolean } {
     const url = this.router.url;
       return {
-      products: url.startsWith('/products') || url.startsWith('/subscription-offers') || url.startsWith('/sales'),
-      functions: url.startsWith('/customers') || url.startsWith('/users') || url.startsWith('/company') || url.startsWith('/invoices') || url.startsWith('/archiving') || url.startsWith('/reporting'),
+      products: url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/subscription-offers') || url.startsWith('/sales'),
+      functions: url.startsWith('/customers') || url.startsWith('/users') || url.startsWith('/company') || url.startsWith('/invoices') || url.startsWith('/archiving') || url.startsWith('/reporting') || url.startsWith('/database-backups'),
     };
   }
 }

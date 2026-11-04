@@ -7,6 +7,13 @@ export interface Customer {
   openDebtAmount: number;
 }
 
+export interface CustomerPurchaseLine {
+  label: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
 export interface CustomerPurchase {
   saleId: string;
   sessionId: string | null;
@@ -16,6 +23,13 @@ export interface CustomerPurchase {
   soldAt: string;
   totalAmount: number;
   openDebt: boolean;
+  debtId?: string | null;
+  lines?: readonly CustomerPurchaseLine[];
+}
+
+export interface CustomerComment {
+  customerId: string;
+  comment: string | null;
 }
 
 export interface CustomerDetails extends Customer {

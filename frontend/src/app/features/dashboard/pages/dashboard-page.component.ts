@@ -22,15 +22,7 @@ import { SessionService } from '../../../core/services/session.service';
       </article>
     </section>
   `,
-  styles: `
-    .dashboard { display: grid; gap: 1.5rem; }
-    .eyebrow { margin: 0; color: #ff7b00; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.72rem; }
-    header, .card { background: rgba(255,255,255,0.8); border-radius: 1.2rem; padding: 1.5rem; }
-    dl { display: grid; gap: 1rem; margin: 0; }
-    div { display: grid; gap: 0.2rem; }
-    dt { font-weight: 700; color: #334155; }
-    dd { margin: 0; }
-  `,
+  styleUrl: './dashboard-page.component.css',
 })
 export class DashboardPageComponent {
   readonly session = inject(SessionService);

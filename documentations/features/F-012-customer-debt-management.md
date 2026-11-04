@@ -34,6 +34,8 @@ Permettre la creation, la consultation et le reglement des dettes ouvertes d'un 
 - les dettes ouvertes doivent etre visibles en rouge dans les ecrans operatoires
 - un client peut posseder plusieurs dettes ouvertes
 - le reglement d'une dette ne doit pas supprimer son historique
+- les dettes issues de ventes distinctes restent distinctes, meme avec un libelle, un montant et une date identiques ; chaque dette de vente conserve le `saleId` de son origine
+- la reintegration d'une dette a une session utilise uniquement ce lien explicite et ne rapproche jamais plusieurs ventes similaires par leur libelle
 - l'affichage operationnel d'une dette doit rester compact et presenter date / heure au format `JJ/MM/AAAA HH:mm`
 - l'ecran `Dettes` doit pouvoir limiter le nombre de clients affiches par page
 - la pagination de l'ecran `Dettes` doit utiliser `Precedent` / `Suivant`

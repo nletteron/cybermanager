@@ -11,5 +11,6 @@ public record AuthenticationResponse(
         String lastName,
         Set<String> roles
 ) {
+
 }
 

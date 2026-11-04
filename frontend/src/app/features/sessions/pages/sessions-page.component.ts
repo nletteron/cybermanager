@@ -3,7 +3,7 @@ import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, forkJoin, interval, map, of, switchMap } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, interval, map, of, switchMap, timer } from 'rxjs';
 
 import type { Customer, CustomerDetails, CustomerPurchase } from '../../customers/models/customer.models';
 import { CustomersApiService } from '../../customers/services/customers-api.service';
@@ -15,24 +15,19 @@ import { SubscriptionOffersApiService } from '../../subscriptions/services/subsc
 import { SalesApiService } from '../../sales/services/sales-api.service';
 import { AppLoggerService } from '../../../core/services/app-logger.service';
 import type { CafeSession } from '../models/session.models';
+import type { SessionSortColumn, SessionState, SessionTableSort } from '../models/session-table.models';
+import { SessionStateFilterComponent } from '../components/session-state-filter.component';
+import type { SessionDetailEntry, SessionDetailRow } from '../models/session-detail-entry.models';
+import type { SessionDisplayPreference } from '../models/session-display-preference.models';
+import { SessionEntriesService } from '../services/session-entries.service';
+import { SessionCustomerDetailsService } from '../services/session-customer-details.service';
+import { SessionTableService } from '../services/session-table.service';
 import { SessionsApiService } from '../services/sessions-api.service';
-
-type SessionDetailEntry = {
-  kind: 'purchase' | 'debt';
-  saleIds: string[];
-  debtIds: string[];
-  sessionId?: string | null;
-  label: string;
-  rawLabel?: string;
-  debtLabel?: string;
-  occurredAt: string;
-  amount: number;
-  openDebt: boolean;
-};
+import { CustomerCommentComponent } from '../../customers/components/customer-comment.component';
 
 @Component({
   selector: 'app-sessions-page',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SessionStateFilterComponent, CustomerCommentComponent],
   template: `
     <section class="page">
       <header class="hero">
@@ -50,91 +45,25 @@ type SessionDetailEntry = {
 
       <div class="grid">
         <article class="panel panel-left stack">
-          <div class="accordion-group">
-            <section class="mode-card" [class.open]="openSection() === 'walk-in'">
-              <button type="button" class="mode-toggle" (click)="setSection('walk-in')">
-                <span>Client</span>
-                <small>{{ openSection() === 'walk-in' ? 'Refermer' : 'Ouvrir' }}</small>
+          <form [formGroup]="clientForm" (ngSubmit)="startClientSession()" class="stack client-search-form">
+            <label class="field">
+              <span>Client</span>
+              <input formControlName="customerName" placeholder="Rechercher ou saisir un nom" autocomplete="off" aria-controls="session-customer-results" />
+            </label>
+            <p class="meta" role="status" *ngIf="searchingCustomers()">Recherche…</p>
+            <p class="error" role="alert" *ngIf="customerSearchError()">{{ customerSearchError() }}</p>
+            <div id="session-customer-results" class="customer-results" *ngIf="customerResults().length">
+              <button type="button" class="customer-option" *ngFor="let customer of customerResults()" (click)="selectCustomer(customer)" [disabled]="customer.status !== 'ACTIVE' || hasCurrentSession(customer.customerId)">
+                <span class="customer-name" [title]="customer.name">{{ customer.name }}</span>
+                <small>{{ customerTypeLabel(customer.type) }}<span *ngIf="customer.type === 'SUBSCRIBER'"> · {{ customer.remainingMinutes }} min</span><span *ngIf="hasCurrentSession(customer.customerId)"> · Session déjà ouverte</span><span *ngIf="customer.status !== 'ACTIVE'"> · Inactif</span></small>
               </button>
-              <div class="mode-body">
-                <form [formGroup]="walkInForm" (ngSubmit)="startWalkIn()" class="stack">
-                  <label class="field">
-                    <span>Nom du client</span>
-                    <input formControlName="customerName" placeholder="Ex. Samir" />
-                  </label>
-                  <button type="submit">Demarrer la session</button>
-                </form>
-              </div>
-            </section>
-
-            <section class="mode-card" [class.open]="openSection() === 'subscriber-existing'">
-              <button type="button" class="mode-toggle" (click)="setSection('subscriber-existing')">
-                <span>Abonne existant</span>
-                <small>{{ openSection() === 'subscriber-existing' ? 'Refermer' : 'Ouvrir' }}</small>
-              </button>
-              <div class="mode-body stack">
-                <label class="field">
-                  <span>Recherche d'un abonne</span>
-                  <input [formControl]="subscriberSearchForm.controls.term" placeholder="Nom de l'abonne" />
-                </label>
-                <div class="suggestions" *ngIf="subscriberResults().length > 0">
-                  <button type="button" class="suggestion" *ngFor="let item of subscriberResults()" (click)="startSubscriber(item)">
-                    <strong>{{ item.name }}</strong>
-                    <span>{{ item.remainingMinutes }} min disponibles</span>
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section class="mode-card" [class.open]="openSection() === 'subscriber-new'">
-              <button type="button" class="mode-toggle" (click)="setSection('subscriber-new')">
-                <span>Nouvel abonne</span>
-                <small>{{ openSection() === 'subscriber-new' ? 'Refermer' : 'Ouvrir' }}</small>
-              </button>
-              <div class="mode-body">
-                <form [formGroup]="newSubscriberForm" (ngSubmit)="createAndStartSubscriber()" class="stack">
-                  <label class="field">
-                    <span>Nom du nouvel abonne</span>
-                    <input formControlName="name" placeholder="Ex. Lina Dupont" />
-                  </label>
-                  <label class="field">
-                    <span>Abonnement initial</span>
-                    <select formControlName="subscriptionOfferId">
-                      <option value="">Choisir une offre</option>
-                      <option *ngFor="let offer of offers()" [value]="offer.offerId">{{ offer.name }} - {{ offer.includedMinutes }} min</option>
-                    </select>
-                  </label>
-                  <button type="submit">Creer et demarrer</button>
-                </form>
-              </div>
-            </section>
-          </div>
-
-          <section class="mode-card accent open" *ngIf="selectedWalkInSession() as session">
-            <div class="mode-toggle static">
-              <span>Convertir la session en abonne</span>
             </div>
-            <div class="mode-body visible">
-              <form [formGroup]="convertForm" (ngSubmit)="convertSelectedWalkIn()" class="stack">
-                <p class="muted">{{ session.customerName }}</p>
-                <label class="field">
-                  <span>Offre d'abonnement</span>
-                  <select formControlName="subscriptionOfferId">
-                    <option value="">Choisir une offre</option>
-                    <option *ngFor="let offer of offers()" [value]="offer.offerId">{{ offer.name }} - {{ offer.includedMinutes }} min</option>
-                  </select>
-                </label>
-                <label class="checkbox">
-                  <input type="checkbox" formControlName="deductCurrentSession" />
-                  <span>Deduir la session en cours</span>
-                </label>
-                <div class="actions">
-                  <button type="submit">Convertir</button>
-                  <button type="button" class="ghost" (click)="selectedWalkInSession.set(null)">Fermer</button>
-                </div>
-              </form>
+            <div class="selected-customer" *ngIf="selectedCustomer() as customer">
+              <span class="meta">{{ customerTypeLabel(customer.type) }}<span *ngIf="customer.type === 'SUBSCRIBER'"> · {{ customer.remainingMinutes }} min disponibles</span></span>
+              <button type="button" class="text-action" (click)="clearCustomerSelection()">Effacer la sélection</button>
             </div>
-          </section>
+            <button type="submit" [disabled]="searchingCustomers() || startingSession() || !!customerSearchError()">{{ startingSession() ? 'Démarrage…' : 'Démarrer la session' }}</button>
+          </form>
 
         </article>
 
@@ -152,7 +81,7 @@ type SessionDetailEntry = {
                 <p class="meta">{{ filteredCurrent().length }} resultat(s)</p>
               </div>
             </div>
-            <div class="filters-grid collapsible" [class.is-collapsed]="!showCurrentFilters()">
+            <div class="filters-grid collapsible" [class.is-collapsed]="!showCurrentFilters()" [attr.inert]="showCurrentFilters() ? null : ''">
               <label class="field">
                 <span>Recherche par nom</span>
                 <input [formControl]="currentFilters.controls.term" placeholder="Nom du client" />
@@ -161,15 +90,32 @@ type SessionDetailEntry = {
                 <span>Debut a partir de</span>
                 <input type="datetime-local" [formControl]="currentFilters.controls.startedAfter" />
               </label>
+              <app-session-state-filter [value]="currentState()" (valueChange)="currentState.set($event)" />
             </div>
             <div class="table-shell fixed-shell">
               <table class="table">
                 <thead>
-                  <tr><th class="center-cell indicator-head"></th><th>Client</th><th class="center-cell">Type</th><th class="center-cell">Etat</th><th class="center-cell">Credit</th><th class="center-cell">A payer</th><th class="center-cell">Consomme</th><th class="center-cell">Debut</th><th class="actions-head" colspan="4"></th></tr>
+                  <tr>
+                    <th class="center-cell indicator-head" scope="col"></th>
+                    <th scope="col" [attr.aria-sort]="currentAriaSort('customerName')">
+                      <button type="button" class="table-sort" (click)="sortCurrent('customerName')">Client <span aria-hidden="true">{{ currentSortIndicator('customerName') }}</span></button>
+                    </th>
+                    <th class="center-cell" scope="col">Type</th>
+                    <th class="center-cell" scope="col" [attr.aria-sort]="currentAriaSort('state')">
+                      <button type="button" class="table-sort" (click)="sortCurrent('state')">État <span aria-hidden="true">{{ currentSortIndicator('state') }}</span></button>
+                    </th>
+                    <th class="center-cell" scope="col">Credit</th>
+                    <th class="center-cell" scope="col">A payer</th>
+                    <th class="center-cell" scope="col">Consomme</th>
+                    <th class="center-cell" scope="col" [attr.aria-sort]="currentAriaSort('startedAt')">
+                      <button type="button" class="table-sort" (click)="sortCurrent('startedAt')">Début <span aria-hidden="true">{{ currentSortIndicator('startedAt') }}</span></button>
+                    </th>
+                    <th class="actions-head" colspan="5"></th>
+                  </tr>
                 </thead>
                 <tbody>
                   <ng-container *ngFor="let item of filteredCurrent()">
-                    <tr [class.active-row]="sessionState(item) === 'En cours'" [class.paused-row]="sessionState(item) === 'Pause'" [class.awaiting-payment-row]="sessionState(item) === 'A payer'" [class.paid-row]="sessionState(item) === 'Terminee'">
+                    <tr class="session-row" tabindex="0" (click)="onSessionRowInteraction(item, $event)" (keydown.enter)="onSessionRowInteraction(item, $event)" (keydown.space)="onSessionRowInteraction(item, $event)" [attr.aria-expanded]="expandedSessionIds().has(item.sessionId)" [attr.aria-controls]="'session-detail-' + item.sessionId" [class.active-row]="sessionState(item) === 'En cours'" [class.paused-row]="sessionState(item) === 'Pause'" [class.awaiting-payment-row]="sessionState(item) === 'A payer'" [class.paid-row]="sessionState(item) === 'Terminee'">
                       <td class="center-cell indicator-cell">
                         <span *ngIf="hasOpenDebt(item); else standardUserIndicator" class="session-indicator debt-session-indicator" title="Client avec dette ouverte" aria-label="Client avec dette ouverte">D</span>
                         <ng-template #standardUserIndicator>
@@ -195,48 +141,61 @@ type SessionDetailEntry = {
                       <td class="action-cell"><button type="button" class="ghost" *ngIf="canPauseOrResume(item)" (click)="togglePause(item)">{{ item.paused ? 'Reprendre' : 'Pause' }}</button></td>
                       <td class="action-cell"><button type="button" *ngIf="canStop(item)" (click)="stopSession(item)">Arreter</button></td>
                       <td class="action-cell"><button type="button" *ngIf="canPay(item)" (click)="openPaymentDialog(item)">Payer</button></td>
-                      <td class="action-cell"><button type="button" class="ghost" (click)="toggleDetails(item)">Detail</button></td>
-                      <td class="action-cell"><button type="button" class="ghost" *ngIf="item.customerType === 'WALK_IN' && canStop(item)" (click)="selectWalkInSession(item)">Convertir</button></td>
+                      <td class="action-cell">
+                        <div class="session-sale-actions">
+                          <button type="button" class="secondary sale-action" (click)="openProductSaleModal(item)" aria-label="Vendre un produit" title="Vendre un produit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                              <path d="M3 3h2l2.5 12h10l3-9H6" />
+                              <circle cx="9" cy="20" r="1" /><circle cx="17" cy="20" r="1" />
+                            </svg>
+                          </button>
+                          <button type="button" class="secondary sale-action" (click)="openSubscriptionSaleModal(item)" aria-label="Vendre un abonnement" title="Vendre un abonnement">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                              <rect x="3" y="4" width="18" height="16" rx="2" />
+                              <path d="M7 8h10M7 12h6M7 16h4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td class="action-cell detail-toggle-cell"><button type="button" class="detail-toggle" (click)="toggleDetails(item)" [attr.aria-expanded]="expandedSessionIds().has(item.sessionId)" [attr.aria-controls]="'session-detail-' + item.sessionId" [attr.aria-label]="(expandedSessionIds().has(item.sessionId) ? 'Replier le détail de ' : 'Déplier le détail de ') + item.customerName">{{ expandedSessionIds().has(item.sessionId) ? '−' : '+' }}</button></td>
                     </tr>
-                    <tr class="detail-row" *ngIf="expandedSessionId() === item.sessionId">
-                      <td colspan="12">
+                    <tr class="detail-row" *ngIf="expandedSessionIds().has(item.sessionId)" [id]="'session-detail-' + item.sessionId">
+                      <td colspan="13">
                         <div class="detail-card" *ngIf="sessionDetails()[item.customerId] as details; else detailLoading">
                           <div class="detail-grid">
                             <section class="stack">
-                              <h4>Achats de la session et dettes</h4>
+                              <div class="section-title-group">
+                                <h4>Achats de la session et dettes</h4>
+                                <button type="button" class="ghost detail-toggle entry-group-toggle" (click)="toggleEntryGrouping(item)" [disabled]="loadingGroupingPreference() || savingGroupingPreference()" [attr.aria-pressed]="isEntryGrouping(item)" [attr.aria-label]="isEntryGrouping(item) ? 'Afficher les lignes séparément' : 'Fusionner les lignes identiques'" [title]="isEntryGrouping(item) ? 'Afficher les lignes séparément' : 'Fusionner les lignes identiques (choix enregistré)'">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h4l8 7h4M4 19h4l8-7M17 9l3 3-3 3" /></svg>
+                                </button>
+                              </div>
                               <div class="purchase-list" *ngIf="sessionEntries(item, details).length > 0; else noPurchases">
-                                <article class="purchase-item compact session-entry" [class.debt-entry]="entry.kind === 'debt'" *ngFor="let entry of sessionEntries(item, details)">
-                                  <strong>
+                                <article class="purchase-item compact session-entry" [class.debt-entry]="entry.kind === 'debt'" *ngFor="let entry of sessionRows(item, details); trackBy: trackEntry">
+                                  <strong [title]="entryLabel(entry)">
                                     <span class="money-alert-icon debt-entry-icon" *ngIf="entry.openDebt" title="Dette ouverte"><span class="bill back"></span><span class="bill front"></span><span class="slash"></span></span>
-                                    {{ formatEntryLabel(entry.label) }}
+                                    {{ entryLabel(entry) }}
                                   </strong>
                                   <span class="entry-date">{{ entry.occurredAt | date:'dd/MM/yyyy HH:mm' }}</span>
                                   <span class="entry-amount">{{ entry.amount | number:'1.2-2' }} EUR</span>
-                                  <span class="entry-actions-cell">
+                                  <span class="entry-actions-cell" *ngIf="entry.entries.length === 1; else groupedEntryActions">
                                     <label class="entry-check" title="Cocher pour mettre en dette ou regler la dette">
                                       <input type="checkbox" [checked]="entry.openDebt" (change)="toggleEntryDebt(item, entry, $event)" />
                                     </label>
-                                    <button type="button" class="ghost compact-remove icon-remove" *ngIf="canDeleteSubscriptionEntry(item, entry)" (click)="deleteSubscriptionEntry(item, entry)" aria-label="Supprimer l abonnement" title="Supprimer l abonnement">-</button>
+                                    <button type="button" class="ghost compact-remove icon-remove" (click)="deleteEntry(item, entry)" [disabled]="pendingEntryIds().has(entry.id)" [attr.aria-label]="'Supprimer : ' + entry.label" title="Supprimer cette ligne">-</button>
                                   </span>
+                                  <ng-template #groupedEntryActions>
+                                    <span class="entry-actions-cell">
+                                      <button type="button" class="ghost detail-toggle" (click)="showSeparateEntries(item)" [attr.aria-label]="'Afficher séparément les ' + entry.entries.length + ' lignes de ' + entry.label" title="Voir les lignes sans modifier le choix de fusion enregistré">{{ entry.entries.length }}</button>
+                                    </span>
+                                  </ng-template>
                                 </article>
                               </div>
                             <ng-template #noPurchases><p class="muted">Aucun achat rattache a cette session ni dette ouverte.</p></ng-template>
                             </section>
 
-                            <section class="stack">
-                              <h4>Resume abonnement</h4>
-                              <p class="muted"><strong>Type :</strong> <span [class]="customerTypeChipClass(details.type)">{{ customerTypeLabel(details.type) }}</span></p>
-                              <p class="muted"><strong>Abonnements :</strong> {{ details.currentSubscriptionLabel ?? 'Aucun' }}</p>
-                              <p class="muted" *ngIf="details.type === 'SUBSCRIBER'">Les abonnements se cumulent.</p>
-                              <p class="muted"><strong>Credit :</strong> {{ details.remainingMinutes }} min</p>
-                              <p class="muted"><strong>Cout connexion :</strong> {{ item.calculatedPrice | number:'1.2-2' }} EUR</p>
-                              <p class="muted"><strong>Achats du jour :</strong> {{ item.purchasesAmount | number:'1.2-2' }} EUR</p>
-                              <p class="muted"><strong>A payer :</strong> {{ item.totalAmountDue | number:'1.2-2' }} EUR</p>
-                              <p class="muted debt-summary" *ngIf="details.debts.length > 0"><strong>Dettes :</strong> <span class="money-alert-icon debt-indicator" title="Dettes ouvertes"><span class="bill back"></span><span class="bill front"></span><span class="slash"></span></span></p>
-                              <div class="actions">
-                                <button type="button" class="ghost" (click)="openProductSaleModal(item)">Vendre un produit</button>
-                                <button type="button" class="ghost" (click)="openSubscriptionSaleModal(item)">Vendre un abonnement</button>
-                              </div>
+                            <section class="stack customer-comment-column">
+                              <app-customer-comment [customerId]="item.customerId" />
                             </section>
                           </div>
                         </div>
@@ -246,6 +205,9 @@ type SessionDetailEntry = {
                       </td>
                     </tr>
                   </ng-container>
+                  <tr *ngIf="filteredCurrent().length === 0">
+                    <td colspan="13" class="muted">{{ current().length ? 'Aucune session ne correspond aux filtres.' : 'Aucune session en cours.' }}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -452,47 +414,60 @@ export class SessionsPageComponent {
   private readonly api = inject(SessionsApiService);
   private readonly logger = inject(AppLoggerService);
   private readonly fb = inject(FormBuilder);
+  private readonly sessionTable = inject(SessionTableService);
+  private readonly entryService = inject(SessionEntriesService);
+  private readonly customerDetailsService = inject(SessionCustomerDetailsService);
 
   readonly current = signal<CafeSession[]>([]);
   readonly day = signal<CafeSession[]>([]);
-  readonly subscriberResults = signal<Customer[]>([]);
+  readonly customerResults = signal<Customer[]>([]);
+  readonly selectedCustomer = signal<Customer | null>(null);
+  readonly searchingCustomers = signal(false);
+  readonly startingSession = signal(false);
+  readonly customerSearchError = signal('');
   readonly offers = signal<SubscriptionOffer[]>([]);
   readonly products = signal<Product[]>([]);
   readonly pricingTiers = signal<ConnectionPricingTier[]>([]);
-  readonly selectedWalkInSession = signal<CafeSession | null>(null);
   readonly saleTargetSession = signal<CafeSession | null>(null);
   readonly saleModalType = signal<'product' | 'subscription' | null>(null);
   readonly payTargetSession = signal<CafeSession | null>(null);
   readonly customerModalId = signal<string | null>(null);
   readonly customerPurchasesVisibleCount = signal(10);
   readonly paymentOfferIds = signal<string[]>([]);
-  readonly expandedSessionId = signal<string | null>(null);
+  readonly expandedSessionIds = signal<ReadonlySet<string>>(new Set());
+  readonly groupingPreference = signal<SessionDisplayPreference | null>(null);
+  readonly loadingGroupingPreference = signal(true);
+  readonly savingGroupingPreference = signal(false);
+  readonly separateEntrySessionIds = signal<ReadonlySet<string>>(new Set());
   readonly expandedDaySessionId = signal<string | null>(null);
   readonly sessionDetails = signal<Record<string, CustomerDetails>>({});
   readonly sessionObservedAt = signal<Record<string, number>>({});
+  readonly pendingEntryIds = signal<ReadonlySet<string>>(new Set());
   readonly error = signal('');
   readonly notice = signal('');
-  readonly openSection = signal<'walk-in' | 'subscriber-existing' | 'subscriber-new' | null>('walk-in');
   readonly dayPage = signal(1);
   readonly currentTerm = signal('');
   readonly currentStartedAfter = signal('');
+  readonly currentState = signal<SessionState | ''>('');
+  readonly currentSort = signal<SessionTableSort>({ column: 'startedAt', direction: 'desc' });
   readonly dayTerm = signal('');
   readonly dayStartedAfter = signal('');
   readonly now = signal(Date.now());
-  readonly showCurrentFilters = signal(false);
+  readonly showCurrentFilters = signal(true);
   readonly showDayFilters = signal(false);
 
-  readonly walkInForm = this.fb.nonNullable.group({ customerName: [''] });
-  readonly subscriberSearchForm = this.fb.nonNullable.group({ term: [''] });
-  readonly newSubscriberForm = this.fb.nonNullable.group({ name: [''], subscriptionOfferId: [''] });
-  readonly convertForm = this.fb.nonNullable.group({ subscriptionOfferId: [''], deductCurrentSession: [false] });
+  readonly clientForm = this.fb.nonNullable.group({ customerName: [''] });
   readonly productSaleForm = this.fb.nonNullable.group({ productId: ['', Validators.required], quantity: [1, [Validators.required, Validators.min(1)]], createDebt: [false] });
   readonly subscriptionSaleForm = this.fb.nonNullable.group({ subscriptionOfferId: ['', Validators.required], createDebt: [false] });
   readonly paymentResolutionForm = this.fb.nonNullable.group({ offerToAddId: [''], createSubscriptionDebt: [false], amountPaid: [0, [Validators.required, Validators.min(0)]] });
   readonly currentFilters = this.fb.nonNullable.group({ term: [''], startedAfter: [''] });
   readonly dayFilters = this.fb.nonNullable.group({ term: [''], startedAfter: [''] });
 
-  readonly filteredCurrent = computed(() => this.filterSessions(this.current(), this.currentTerm(), this.currentStartedAfter()));
+  readonly filteredCurrent = computed(() => this.sessionTable.filterAndSort(this.current(), {
+    term: this.currentTerm(),
+    startedAfter: this.currentStartedAfter(),
+    state: this.currentState(),
+  }, this.currentSort()));
   readonly filteredDay = computed(() => this.filterSessions(this.day().filter((session) => session.paid), this.dayTerm(), this.dayStartedAfter()));
   readonly activePayTargetSession = computed(() => {
     const target = this.payTargetSession();
@@ -510,6 +485,7 @@ export class SessionsPageComponent {
   });
   constructor() {
     this.logger.info('sessions-ui', 'Sessions page initialized');
+    this.loadGroupingPreference();
     this.reload();
     this.loadOffers();
     this.salesApi.pricing().subscribe({
@@ -526,14 +502,25 @@ export class SessionsPageComponent {
       },
     });
 
-    this.subscriberSearchForm.controls.term.valueChanges.pipe(
+    this.clientForm.controls.customerName.valueChanges.pipe(
       map((value) => value.trim()),
-      debounceTime(150),
-      distinctUntilChanged(),
+      switchMap((term) => {
+        this.selectedCustomer.set(null);
+        this.customerResults.set([]);
+        this.customerSearchError.set('');
+        this.searchingCustomers.set(!!term);
+        return term ? timer(150).pipe(
+          switchMap(() => this.customersApi.search(term)),
+          catchError(() => {
+            this.customerSearchError.set('Recherche des clients impossible.');
+            return of<Customer[]>([]);
+          }),
+        ) : of<Customer[]>([]);
+      }),
       takeUntilDestroyed(),
-    ).subscribe((term) => {
-      this.logger.debug('sessions-ui', 'Subscriber autocomplete input updated', { termLength: term.length });
-      this.autocompleteSubscribers(term);
+    ).subscribe((customers) => {
+      this.customerResults.set(customers);
+      this.searchingCustomers.set(false);
     });
 
     this.currentFilters.controls.term.valueChanges.pipe(
@@ -586,8 +573,23 @@ export class SessionsPageComponent {
     });
   }
 
-  setSection(section: 'walk-in' | 'subscriber-existing' | 'subscriber-new'): void {
-    this.openSection.set(this.openSection() === section ? null : section);
+  sortCurrent(column: SessionSortColumn): void {
+    this.currentSort.update((sort) => ({
+      column,
+      direction: sort.column === column
+        ? (sort.direction === 'asc' ? 'desc' : 'asc')
+        : (column === 'startedAt' ? 'desc' : 'asc'),
+    }));
+  }
+
+  currentAriaSort(column: SessionSortColumn): 'none' | 'ascending' | 'descending' {
+    const sort = this.currentSort();
+    return sort.column !== column ? 'none' : sort.direction === 'asc' ? 'ascending' : 'descending';
+  }
+
+  currentSortIndicator(column: SessionSortColumn): string {
+    const direction = this.currentAriaSort(column);
+    return direction === 'none' ? '↕' : direction === 'ascending' ? '↑' : '↓';
   }
 
   loadOffers(): void {
@@ -633,91 +635,47 @@ export class SessionsPageComponent {
     });
   }
 
-  autocompleteSubscribers(term: string): void {
-    if (term.length < 2) {
-      this.subscriberResults.set([]);
+  selectCustomer(customer: Customer): void {
+    this.selectedCustomer.set(customer);
+    this.clientForm.controls.customerName.setValue(customer.name, { emitEvent: false });
+    this.customerResults.set([]);
+    this.customerSearchError.set('');
+  }
+
+  clearCustomerSelection(): void {
+    this.selectedCustomer.set(null);
+    this.clientForm.reset({ customerName: '' });
+  }
+
+  startClientSession(): void {
+    if (this.searchingCustomers() || this.startingSession() || this.customerSearchError()) return;
+    const customerName = this.clientForm.controls.customerName.value.trim();
+    const customer = this.selectedCustomer();
+    if (!customerName) {
+      this.error.set('Le nom du client est requis.');
       return;
     }
-    this.customersApi.search(term, 'SUBSCRIBER').subscribe({
-      next: (customers) => {
-        this.subscriberResults.set(customers);
+    if (customer && (customer.status !== 'ACTIVE' || this.hasCurrentSession(customer.customerId))) {
+      this.error.set(customer.status !== 'ACTIVE' ? 'Ce client est inactif.' : 'Ce client a déjà une session ouverte.');
+      return;
+    }
+    if (!customer && this.customerResults().some((item) => item.name.trim().toLocaleLowerCase('fr') === customerName.toLocaleLowerCase('fr'))) {
+      this.error.set('Sélectionne le client existant dans la liste pour réutiliser sa fiche.');
+      return;
+    }
+    this.startingSession.set(true);
+    this.api.start(customer ? { customerId: customer.customerId } : { customerName }).subscribe({
+      next: () => {
+        this.startingSession.set(false);
+        this.clearCustomerSelection();
+        this.notice.set('');
         this.error.set('');
-        this.logger.debug('sessions-ui', 'Subscriber autocomplete results received', {
-          termLength: term.length,
-          resultCount: customers.length,
-          alreadyActiveCount: customers.filter((customer) => this.hasCurrentSession(customer.customerId)).length,
-        });
+        this.reload();
       },
       error: (error: HttpErrorResponse) => {
-        this.logger.warn('sessions-ui', 'Subscriber autocomplete failed', { termLength: term.length, error });
-        this.error.set(error.error?.message ?? 'Recherche des abonnes impossible');
+        this.startingSession.set(false);
+        this.error.set(error.error?.message ?? 'Démarrage impossible.');
       },
-    });
-  }
-
-  startWalkIn(): void {
-    const customerName = this.walkInForm.getRawValue().customerName.trim();
-    if (!customerName) {
-      this.error.set('Le nom du client est requis');
-      return;
-    }
-    this.api.start({ customerName }).subscribe({
-      next: () => {
-        this.walkInForm.reset({ customerName: '' });
-        this.notice.set('');
-        this.reload();
-      },
-      error: (error: HttpErrorResponse) => this.error.set(error.error?.message ?? 'Demarrage impossible'),
-    });
-  }
-
-  startSubscriber(customer: Customer): void {
-    if (this.hasCurrentSession(customer.customerId)) {
-      this.error.set('Cet abonne a deja une session en cours.');
-      this.logger.warn('sessions-ui', 'Blocked duplicate subscriber session start', {
-        customerId: customer.customerId,
-        customerName: customer.name,
-      });
-      return;
-    }
-    this.api.start({ customerId: customer.customerId }).subscribe({
-      next: () => {
-        this.subscriberSearchForm.reset({ term: '' });
-        this.subscriberResults.set([]);
-        this.notice.set('');
-        this.reload();
-      },
-      error: (error: HttpErrorResponse) => this.error.set(error.error?.message ?? 'Demarrage impossible'),
-    });
-  }
-
-  createAndStartSubscriber(): void {
-    const payload = this.newSubscriberForm.getRawValue();
-    if (!payload.name.trim() || !payload.subscriptionOfferId) {
-      this.error.set('Le nom et l offre d abonnement sont requis');
-      return;
-    }
-    const customerName = payload.name.trim();
-    const subscriptionOfferId = payload.subscriptionOfferId;
-    this.customersApi.create({ name: customerName, type: 'WALK_IN' }).pipe(
-      switchMap((customer) =>
-        this.api.start({ customerId: customer.customerId }).pipe(
-          switchMap((session) =>
-            this.customersApi.convert(customer.customerId, {
-              subscriptionOfferId,
-              deductCurrentSession: false,
-              sessionId: session.sessionId,
-            }).pipe(map(() => customer)),
-          ),
-        ),
-      ),
-    ).subscribe({
-      next: () => {
-        this.newSubscriberForm.reset({ name: '', subscriptionOfferId: '' });
-        this.notice.set('');
-        this.reload();
-      },
-      error: (error: HttpErrorResponse) => this.error.set(error.error?.message ?? 'Creation de l abonne impossible'),
     });
   }
 
@@ -883,13 +841,25 @@ export class SessionsPageComponent {
     });
   }
 
-  toggleDetails(session: CafeSession): void {
-    if (this.expandedSessionId() === session.sessionId) {
-      this.expandedSessionId.set(null);
+  onSessionRowInteraction(session: CafeSession, event: Event): void {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest('button, a, input, select, textarea, label, summary, [role="button"]')) {
       return;
     }
-    this.expandedSessionId.set(session.sessionId);
-    this.loadCustomerDetails(session.customerId);
+    if (event instanceof KeyboardEvent) event.preventDefault();
+    this.toggleDetails(session);
+  }
+
+  toggleDetails(session: CafeSession): void {
+    const expanded = new Set(this.expandedSessionIds());
+    if (expanded.has(session.sessionId)) {
+      expanded.delete(session.sessionId);
+      this.clearSeparateEntries(session.sessionId);
+    } else {
+      expanded.add(session.sessionId);
+      this.loadCustomerDetails(session.customerId);
+    }
+    this.expandedSessionIds.set(expanded);
   }
 
   toggleDayDetails(session: CafeSession): void {
@@ -899,28 +869,6 @@ export class SessionsPageComponent {
     }
     this.expandedDaySessionId.set(session.sessionId);
     this.loadCustomerDetails(session.customerId);
-  }
-
-  selectWalkInSession(session: CafeSession): void {
-    this.selectedWalkInSession.set(session);
-    this.convertForm.reset({ subscriptionOfferId: '', deductCurrentSession: false });
-  }
-
-  convertSelectedWalkIn(): void {
-    const session = this.selectedWalkInSession();
-    const payload = this.convertForm.getRawValue();
-    if (!session || !payload.subscriptionOfferId) {
-      this.error.set('Une offre d abonnement est requise');
-      return;
-    }
-    this.customersApi.convert(session.customerId, payload as { subscriptionOfferId: string; deductCurrentSession: boolean }).subscribe({
-      next: () => {
-        this.selectedWalkInSession.set(null);
-        this.convertForm.reset({ subscriptionOfferId: '', deductCurrentSession: false });
-        this.reload();
-      },
-      error: (error: HttpErrorResponse) => this.error.set(error.error?.message ?? 'Conversion impossible'),
-    });
   }
 
   changeDayPage(step: number): void {
@@ -933,70 +881,74 @@ export class SessionsPageComponent {
   }
 
   sessionEntries(session: CafeSession, details: CustomerDetails): SessionDetailEntry[] {
-    const sessionStart = new Date(session.startedAt).getTime();
-    const sessionEnd = session.endedAt ? new Date(session.endedAt).getTime() : Number.POSITIVE_INFINITY;
-    const uniquePurchases = Array.from(new Map(details.purchases.map((purchase) => [purchase.saleId, purchase] as const)).values());
-    const allPurchases = uniquePurchases.map((purchase) => ({
-      kind: 'purchase' as const,
-      saleIds: [purchase.saleId],
-      debtIds: [],
-      sessionId: purchase.sessionId,
-      label: purchase.label,
-      debtLabel: purchase.debtLabel,
-      occurredAt: purchase.soldAt,
-      amount: purchase.totalAmount,
-      openDebt: purchase.openDebt,
-    }));
-    const sessionPurchases = allPurchases
-      .filter((purchase) => {
-        if (purchase.sessionId) {
-          return purchase.sessionId === session.sessionId;
-        }
-        const occurredAt = new Date(purchase.occurredAt).getTime();
-        return occurredAt >= sessionStart && occurredAt <= sessionEnd;
-      })
-      .map((purchase) => ({
-        kind: 'purchase' as const,
-        saleIds: purchase.saleIds,
-        debtIds: [],
-        label: purchase.label,
-        debtLabel: purchase.debtLabel,
-        occurredAt: purchase.occurredAt,
-        amount: purchase.amount,
-        openDebt: purchase.openDebt,
-      }));
-    const openDebts = details.debts
-      .filter((debt) => debt.status === 'OPEN')
-      .map((debt) => ({
-        kind: 'debt' as const,
-        saleIds: [],
-        debtIds: [debt.debtId],
-        label: this.normalizeDebtLabel(debt.label),
-        rawLabel: debt.label,
-        occurredAt: debt.createdAt,
-        amount: debt.amount,
-        openDebt: true,
-      }));
+    return this.entryService.entries(session, details);
+  }
 
-    const mergedPurchases = sessionPurchases.map((purchase) => {
-      const matchedDebt = openDebts.find((debt) => this.isDebtLinkedToPurchase(debt, purchase));
-      return {
-        ...purchase,
-        kind: purchase.openDebt || matchedDebt ? 'debt' as const : 'purchase' as const,
-        debtIds: matchedDebt?.debtIds ?? [],
-        openDebt: purchase.openDebt || !!matchedDebt,
-      };
-    });
-    const remainingDebts = openDebts.filter((debt) => !sessionPurchases.some((purchase) => this.isDebtLinkedToPurchase(debt, purchase)));
-    const relabeledDebts = remainingDebts.map((debt) => {
-      const matchedPurchase = allPurchases.find((purchase) => this.isDebtLinkedToPurchase(debt, purchase));
-      return matchedPurchase
-        ? { ...debt, label: matchedPurchase.label, saleIds: matchedPurchase.saleIds, debtLabel: matchedPurchase.debtLabel }
-        : debt;
-    });
+  sessionRows(session: CafeSession, details: CustomerDetails): SessionDetailRow[] {
+    return this.entryService.rows(session, details, this.isEntryGrouping(session));
+  }
 
-    return [...mergedPurchases, ...relabeledDebts]
-      .sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime());
+  isEntryGrouping(session: CafeSession): boolean {
+    return this.groupingPreference()?.groupEntries === true && !this.separateEntrySessionIds().has(session.sessionId);
+  }
+
+  private loadGroupingPreference(): void {
+    this.api.displayPreference().subscribe({
+      next: (preference) => {
+        this.groupingPreference.set(preference);
+        this.loadingGroupingPreference.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.loadingGroupingPreference.set(false);
+        this.error.set(this.resolveHttpError(error, 'Chargement du choix de fusion impossible.'));
+      },
+    });
+  }
+
+  toggleEntryGrouping(session: CafeSession): void {
+    if (this.loadingGroupingPreference() || this.savingGroupingPreference()) return;
+    const groupEntries = !this.isEntryGrouping(session);
+    if (this.groupingPreference()?.groupEntries === groupEntries) {
+      this.clearSeparateEntries(session.sessionId);
+      return;
+    }
+    this.savingGroupingPreference.set(true);
+    this.error.set('');
+    this.notice.set('');
+    this.api.configureDisplayPreference(groupEntries).subscribe({
+      next: (preference) => {
+        this.groupingPreference.set(preference);
+        this.separateEntrySessionIds.set(new Set());
+        this.savingGroupingPreference.set(false);
+        this.notice.set(preference.groupEntries ? 'Affichage fusionné enregistré.' : 'Affichage séparé enregistré.');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.savingGroupingPreference.set(false);
+        this.error.set(this.resolveHttpError(error, 'Enregistrement du choix de fusion impossible.'));
+      },
+    });
+  }
+
+  showSeparateEntries(session: CafeSession): void {
+    this.separateEntrySessionIds.update((ids) => new Set([...ids, session.sessionId]));
+  }
+
+  private clearSeparateEntries(sessionId: string): void {
+    this.separateEntrySessionIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(sessionId);
+      return next;
+    });
+  }
+
+  entryLabel(entry: SessionDetailEntry): string {
+    return entry.lines.length
+      ? entry.lines.map((line) => `${line.quantity} x ${line.label}`).join(', ')
+      : this.formatEntryLabel(entry.label);
+  }
+
+  trackEntry(_index: number, entry: SessionDetailEntry): string {
+    return entry.id;
   }
 
   formatEntryLabel(label: string): string {
@@ -1026,17 +978,8 @@ export class SessionsPageComponent {
     return this.formatSeconds(this.liveDisplayRemainingSeconds(session));
   }
 
-  sessionState(session: CafeSession): 'En cours' | 'Pause' | 'A payer' | 'Terminee' {
-    if (session.paid) {
-      return 'Terminee';
-    }
-    if (session.endedAt) {
-      return 'A payer';
-    }
-    if (session.paused) {
-      return 'Pause';
-    }
-    return 'En cours';
+  sessionState(session: CafeSession): SessionState {
+    return this.sessionTable.stateOf(session);
   }
 
   customerTypeLabel(type: string): string {
@@ -1111,8 +1054,8 @@ export class SessionsPageComponent {
     return index === visibleCount - 1 && this.customerPurchasesVisibleCount() > 10;
   }
 
-  private hasCurrentSession(customerId: string): boolean {
-    return this.current().some((session) => session.customerId === customerId);
+  hasCurrentSession(customerId: string): boolean {
+    return this.current().some((session) => session.customerId === customerId && (!session.endedAt || !session.paid));
   }
 
   canPauseOrResume(session: CafeSession): boolean {
@@ -1243,16 +1186,16 @@ export class SessionsPageComponent {
   toggleEntryDebt(session: CafeSession, entry: SessionDetailEntry, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     const requests = checked
-      ? entry.saleIds.map((saleId) => this.customersApi.createDebtFromSale(saleId))
-      : entry.debtIds.map((debtId) => this.customersApi.reattachDebtToSession(debtId, session.sessionId));
+      ? entry.saleId ? [this.customersApi.createDebtFromSale(entry.saleId)] : []
+      : entry.debtId ? [this.customersApi.reattachDebtToSession(entry.debtId, session.sessionId)] : [];
 
     if (requests.length === 0) {
       (event.target as HTMLInputElement).checked = entry.openDebt;
       this.error.set('Action impossible sur cette ligne.');
       this.logger.warn('sessions-ui', 'Debt toggle ignored because no actionable request was produced', {
         label: entry.label,
-        saleCount: entry.saleIds.length,
-        debtCount: entry.debtIds.length,
+        saleCount: Number(!!entry.saleId),
+        debtCount: Number(!!entry.debtId),
       });
       return;
     }
@@ -1261,8 +1204,8 @@ export class SessionsPageComponent {
       action: checked ? 'create-debt' : 'reattach-to-session',
       sessionId: session.sessionId,
       label: entry.label,
-      saleCount: entry.saleIds.length,
-      debtCount: entry.debtIds.length,
+      saleCount: Number(!!entry.saleId),
+      debtCount: Number(!!entry.debtId),
     });
     forkJoin(requests).subscribe({
       next: () => {
@@ -1285,49 +1228,36 @@ export class SessionsPageComponent {
     });
   }
 
-  canDeleteSubscriptionEntry(session: CafeSession, entry: SessionDetailEntry): boolean {
-    return !!session.endedAt && !session.paid && entry.saleIds.length === 1 && !!entry.debtLabel && entry.debtLabel.startsWith('Vente abonnement du ');
-  }
-
-  deleteSubscriptionEntry(session: CafeSession, entry: SessionDetailEntry): void {
-    const saleId = entry.saleIds[0];
-    if (!saleId) {
+  deleteEntry(session: CafeSession, entry: SessionDetailEntry): void {
+    if (this.pendingEntryIds().has(entry.id)) return;
+    const request = entry.debtId
+      ? this.api.deleteDebt(session.sessionId, entry.debtId)
+      : entry.saleId ? this.api.deletePurchase(session.sessionId, entry.saleId) : null;
+    if (!request) {
       this.error.set('Suppression impossible pour cette ligne.');
       return;
     }
-    this.salesApi.deleteSubscriptionSale(saleId).subscribe({
+    this.pendingEntryIds.update((ids) => new Set([...ids, entry.id]));
+    request.subscribe({
       next: () => {
-        this.notice.set('Abonnement retire de la session.');
+        this.finishEntryMutation(entry.id);
+        this.notice.set('Ligne supprimée.');
         this.refreshCustomerDetails(session.customerId);
         this.reload();
       },
-      error: (error: HttpErrorResponse) => this.error.set(this.resolveHttpError(error, 'Suppression de l abonnement impossible')),
+      error: (error: HttpErrorResponse) => {
+        this.finishEntryMutation(entry.id);
+        this.error.set(this.resolveHttpError(error, 'Suppression de la ligne impossible'));
+      },
     });
   }
 
-  private normalizeDebtLabel(label: string): string {
-    if (label.startsWith('Vente produits du ')) {
-      return 'Produit';
-    }
-    if (label.startsWith('Vente abonnement du ')) {
-      return 'Abonnement';
-    }
-    if (label.startsWith('Vente temps du ')) {
-      return 'Temps';
-    }
-    if (label.startsWith('Session du ')) {
-      return 'Session';
-    }
-    return this.formatEntryLabel(label);
-  }
-
-  private isDebtLinkedToPurchase(debt: SessionDetailEntry, purchase: SessionDetailEntry): boolean {
-    if (debt.kind !== 'debt' || purchase.kind !== 'purchase') {
-      return false;
-    }
-    return !!debt.rawLabel && !!purchase.debtLabel
-      && debt.rawLabel === purchase.debtLabel
-      && Math.abs(debt.amount - purchase.amount) <= 0.001;
+  private finishEntryMutation(entryId: string): void {
+    this.pendingEntryIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(entryId);
+      return next;
+    });
   }
 
   private purchaseTypeLabel(type: CustomerPurchase['type']): string {
@@ -1366,13 +1296,6 @@ export class SessionsPageComponent {
     return Math.max(0, session.consumedSeconds + extraSeconds);
   }
 
-  private liveRemainingSeconds(session: CafeSession): number {
-    if (session.endedAt) {
-      return Math.max(0, session.remainingMinutes * 60 - Math.max(0, session.consumedSeconds));
-    }
-    return Math.max(0, session.remainingMinutes * 60 - this.liveConsumedSeconds(session));
-  }
-
   private liveDisplayRemainingSeconds(session: CafeSession): number {
     const displayRemainingMinutes = Number(session.displayRemainingMinutes ?? session.remainingMinutes ?? 0);
     if (session.endedAt) {
@@ -1404,15 +1327,6 @@ export class SessionsPageComponent {
         }
         return left.customerName.localeCompare(right.customerName, 'fr');
       });
-  }
-
-  private paginate(items: CafeSession[], page: number, pageSize: number): CafeSession[] {
-    const start = (page - 1) * pageSize;
-    return items.slice(start, start + pageSize);
-  }
-
-  private getPageCount(total: number, pageSize: number): number {
-    return Math.max(1, Math.ceil(total / pageSize));
   }
 
   private calculateConnectionPrice(minutes: number): number {
@@ -1458,14 +1372,6 @@ export class SessionsPageComponent {
     return bestPrice ?? 0;
   }
 
-  private paymentDialogDetails(): CustomerDetails | null {
-    const session = this.activePayTargetSession();
-    if (!session) {
-      return null;
-    }
-    return this.sessionDetails()[session.customerId] ?? null;
-  }
-
   private loadCustomerDetails(customerId: string): void {
     if (this.sessionDetails()[customerId]) {
       return;
@@ -1482,12 +1388,8 @@ export class SessionsPageComponent {
 
   private refreshAfterDebtChange(): void {
     const customerIds = new Set<string>();
-    const currentSessionId = this.expandedSessionId();
-    if (currentSessionId) {
-      const session = this.current().find((item) => item.sessionId === currentSessionId);
-      if (session) {
-        customerIds.add(session.customerId);
-      }
+    for (const session of this.current()) {
+      if (this.expandedSessionIds().has(session.sessionId)) customerIds.add(session.customerId);
     }
     if (this.saleTargetSession()) {
       customerIds.add(this.saleTargetSession()!.customerId);
@@ -1498,14 +1400,13 @@ export class SessionsPageComponent {
 
   private fetchCustomerDetails(customerId: string): void {
     this.logger.debug('sessions-ui', 'Loading customer detail for session drawer', { customerId });
-    this.customersApi.get(customerId).subscribe({
+    this.customerDetailsService.get(customerId).subscribe({
       next: (details) => {
         this.sessionDetails.set({
           ...this.sessionDetails(),
           [customerId]: details,
         });
-        const currentSessionId = this.expandedSessionId();
-        const currentSession = currentSessionId ? this.current().find((item) => item.sessionId === currentSessionId) ?? null : null;
+        const currentSession = this.current().find((item) => item.customerId === customerId && this.expandedSessionIds().has(item.sessionId)) ?? null;
         const entries = currentSession ? this.sessionEntries(currentSession, details) : [];
         this.logger.debug('sessions-ui', 'Session detail normalized for session entries', {
           customerId,

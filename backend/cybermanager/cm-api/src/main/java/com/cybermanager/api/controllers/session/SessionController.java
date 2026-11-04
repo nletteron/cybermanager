@@ -1,20 +1,11 @@
 package com.cybermanager.api.controllers.session;
 
-import com.cybermanager.api.dtos.session.SessionDtos.CurrentSessionsResponse;
-import com.cybermanager.api.dtos.session.SessionDtos.PaySessionRequest;
-import com.cybermanager.api.dtos.session.SessionDtos.RestartSessionsDayResponse;
-import com.cybermanager.api.dtos.session.SessionDtos.SessionResponse;
-import com.cybermanager.api.dtos.session.SessionDtos.StartSessionRequest;
-import com.cybermanager.application.commands.session.PaySessionCommand;
-import com.cybermanager.application.commands.session.PaySessionAndCreateInvoiceCommand;
-import com.cybermanager.application.commands.session.RestartSessionsDayCommand;
-import com.cybermanager.application.commands.session.StartSessionCommand;
-import com.cybermanager.application.commands.session.PauseSessionCommand;
-import com.cybermanager.application.commands.session.ResumeSessionCommand;
-import com.cybermanager.application.commands.session.StopSessionCommand;
-import com.cybermanager.application.queries.session.SearchSessionsOfDayQuery;
-import com.cybermanager.application.services.session.SessionApplicationService;
+import com.cybermanager.api.dtos.session.*;
+import com.cybermanager.api.mappers.session.SessionApiMapper;
+import com.cybermanager.application.usecases.session.*;
 import com.cybermanager.application.views.session.SessionView;
+import com.cybermanager.domain.commands.session.DeleteSessionEntryCommand;
+import com.cybermanager.domain.queries.session.SearchSessionsOfDayQuery;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,51 +18,86 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/sessions")
 public class SessionController {
-    private final SessionApplicationService service;
 
-    public SessionController(SessionApplicationService service) {
-        this.service = service;
+    private final SearchSessionsOfDayUseCase searchSessionsOfDayUseCase;
+    private final GetCurrentSessionsUseCase getCurrentSessionsUseCase;
+    private final StartSessionUseCase startSessionUseCase;
+    private final StopSessionUseCase stopSessionUseCase;
+    private final PaySessionUseCase paySessionUseCase;
+    private final PaySessionAndCreateInvoiceUseCase paySessionAndCreateInvoiceUseCase;
+    private final PauseSessionUseCase pauseSessionUseCase;
+    private final ResumeSessionUseCase resumeSessionUseCase;
+    private final RestartSessionsDayUseCase restartSessionsDayUseCase;
+    private final SessionApiMapper sessionApiMapper;
+    private final DeleteSessionEntryUseCase deleteSessionEntryUseCase;
+
+    public SessionController(
+            SearchSessionsOfDayUseCase searchSessionsOfDayUseCase,
+            GetCurrentSessionsUseCase getCurrentSessionsUseCase,
+            StartSessionUseCase startSessionUseCase,
+            StopSessionUseCase stopSessionUseCase,
+            PaySessionUseCase paySessionUseCase,
+            PaySessionAndCreateInvoiceUseCase paySessionAndCreateInvoiceUseCase,
+            PauseSessionUseCase pauseSessionUseCase,
+            ResumeSessionUseCase resumeSessionUseCase,
+            RestartSessionsDayUseCase restartSessionsDayUseCase,
+            SessionApiMapper sessionApiMapper,
+            DeleteSessionEntryUseCase deleteSessionEntryUseCase
+    ) {
+        this.searchSessionsOfDayUseCase = searchSessionsOfDayUseCase;
+        this.getCurrentSessionsUseCase = getCurrentSessionsUseCase;
+        this.startSessionUseCase = startSessionUseCase;
+        this.stopSessionUseCase = stopSessionUseCase;
+        this.paySessionUseCase = paySessionUseCase;
+        this.paySessionAndCreateInvoiceUseCase = paySessionAndCreateInvoiceUseCase;
+        this.pauseSessionUseCase = pauseSessionUseCase;
+        this.resumeSessionUseCase = resumeSessionUseCase;
+        this.restartSessionsDayUseCase = restartSessionsDayUseCase;
+        this.sessionApiMapper = sessionApiMapper;
+        this.deleteSessionEntryUseCase = deleteSessionEntryUseCase;
+    }
+
+    @DeleteMapping("/{id}/purchases/{saleId}")
+    public ResponseEntity<Void> deletePurchase(@PathVariable("id") UUID id, @PathVariable("saleId") UUID saleId) {
+        deleteSessionEntryUseCase.execute(new DeleteSessionEntryCommand(id, saleId, null));
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/debts/{debtId}")
+    public ResponseEntity<Void> deleteDebt(@PathVariable("id") UUID id, @PathVariable("debtId") UUID debtId) {
+        deleteSessionEntryUseCase.execute(new DeleteSessionEntryCommand(id, null, debtId));
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/day")
     public ResponseEntity<List<SessionResponse>> day(@RequestParam(name = "date", required = false) String date) {
         LocalDate parsed = date == null || date.isBlank() ? LocalDate.now() : LocalDate.parse(date);
-        return ResponseEntity.ok(service.execute(new SearchSessionsOfDayQuery(parsed)).stream().map(this::toResponse).toList());
+        return ResponseEntity.ok(searchSessionsOfDayUseCase.execute(new SearchSessionsOfDayQuery(parsed)).stream().map(this::toResponse).toList());
     }
 
     @GetMapping("/current")
     public ResponseEntity<CurrentSessionsResponse> current() {
-        return ResponseEntity.ok(new CurrentSessionsResponse(service.execute().sessions().stream().map(this::toResponse).toList()));
+        return ResponseEntity.ok(new CurrentSessionsResponse(getCurrentSessionsUseCase.execute().sessions().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping("/start")
     public ResponseEntity<SessionResponse> start(@RequestBody StartSessionRequest request) {
-        return ResponseEntity.ok(toResponse(service.execute(new StartSessionCommand(request.customerId(), request.customerName()))));
+        return ResponseEntity.ok(toResponse(startSessionUseCase.execute(sessionApiMapper.toStartSessionCommand(request))));
     }
 
     @PostMapping("/{id}/stop")
     public ResponseEntity<SessionResponse> stop(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(toResponse(service.execute(new StopSessionCommand(id))));
+        return ResponseEntity.ok(toResponse(stopSessionUseCase.execute(sessionApiMapper.toStopSessionCommand(id))));
     }
 
     @PostMapping("/{id}/pay")
     public ResponseEntity<SessionResponse> pay(@PathVariable("id") UUID id, @RequestBody(required = false) PaySessionRequest request) {
-        return ResponseEntity.ok(toResponse(service.execute(new PaySessionCommand(
-                id,
-                request == null ? null : request.amountPaid(),
-                request == null || request.subscriptionOfferIds() == null ? List.of() : request.subscriptionOfferIds(),
-                request != null && request.createSubscriptionDebt()
-        ))));
+        return ResponseEntity.ok(toResponse(paySessionUseCase.execute(sessionApiMapper.toPaySessionCommand(id, request))));
     }
 
     @PostMapping("/{id}/pay-with-invoice")
     public ResponseEntity<byte[]> payWithInvoice(@PathVariable("id") UUID id, @RequestBody(required = false) PaySessionRequest request) {
-        var result = service.execute(new PaySessionAndCreateInvoiceCommand(
-                id,
-                request == null ? null : request.amountPaid(),
-                request == null || request.subscriptionOfferIds() == null ? List.of() : request.subscriptionOfferIds(),
-                request != null && request.createSubscriptionDebt()
-        ));
+        var result = paySessionAndCreateInvoiceUseCase.execute(sessionApiMapper.toPaySessionAndCreateInvoiceCommand(id, request));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
                 .header("X-Invoice-Id", result.invoiceId().toString())
@@ -82,17 +108,17 @@ public class SessionController {
 
     @PostMapping("/{id}/pause")
     public ResponseEntity<SessionResponse> pause(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(toResponse(service.execute(new PauseSessionCommand(id))));
+        return ResponseEntity.ok(toResponse(pauseSessionUseCase.execute(sessionApiMapper.toPauseSessionCommand(id))));
     }
 
     @PostMapping("/{id}/resume")
     public ResponseEntity<SessionResponse> resume(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(toResponse(service.execute(new ResumeSessionCommand(id))));
+        return ResponseEntity.ok(toResponse(resumeSessionUseCase.execute(sessionApiMapper.toResumeSessionCommand(id))));
     }
 
     @PostMapping("/restart-day")
     public ResponseEntity<RestartSessionsDayResponse> restartDay() {
-        return ResponseEntity.ok(new RestartSessionsDayResponse(service.execute(new RestartSessionsDayCommand())));
+        return ResponseEntity.ok(new RestartSessionsDayResponse(restartSessionsDayUseCase.execute(sessionApiMapper.toRestartSessionsDayCommand())));
     }
 
     private SessionResponse toResponse(SessionView view) {
@@ -117,4 +143,5 @@ public class SessionController {
                 view.totalPaidAmount()
         );
     }
+
 }

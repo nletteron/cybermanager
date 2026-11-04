@@ -8,6 +8,7 @@ export class SalesApiService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.usersApiUrl}`;
   day() { return this.http.get<Sale[]>(`${this.baseUrl}/sales/day`); }
+  get(saleId: string) { return this.http.get<Sale>(`${this.baseUrl}/sales/${saleId}`); }
   productSale(payload: { customerId: string; sessionId?: string | null; lines: { productId: string; quantity: number }[]; createDebt: boolean }) { return this.http.post<Sale>(`${this.baseUrl}/sales/products`, payload); }
   subscriptionSale(payload: { customerId: string; sessionId?: string | null; subscriptionOfferId: string; quantity?: number; createDebt: boolean }) {
     return this.http.post<Sale>(`${this.baseUrl}/sales/subscriptions`, {

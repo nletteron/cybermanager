@@ -1,22 +1,12 @@
 package com.cybermanager.api.controllers.customer;
 
-import com.cybermanager.api.dtos.customer.CustomerDtos.*;
-import com.cybermanager.api.shared.ApiSupport;
-import com.cybermanager.application.commands.customer.ConvertCustomerToSubscriberCommand;
-import com.cybermanager.application.commands.customer.CreateDebtFromSaleCommand;
-import com.cybermanager.application.commands.customer.CreateCustomerCommand;
-import com.cybermanager.application.commands.customer.ArchiveCustomersCommand;
-import com.cybermanager.application.commands.customer.ReattachDebtToSessionCommand;
-import com.cybermanager.application.commands.customer.SettleDebtCommand;
-import com.cybermanager.application.commands.customer.UpdateCustomerCommand;
-import com.cybermanager.application.queries.customer.GetCustomerDetailsQuery;
-import com.cybermanager.application.queries.customer.ExportCustomerDebtReportQuery;
-import com.cybermanager.application.queries.customer.ListGeneratedArchiveFilesQuery;
-import com.cybermanager.application.queries.customer.SearchCustomerArchiveCandidatesQuery;
-import com.cybermanager.application.queries.customer.SearchOpenDebtsQuery;
-import com.cybermanager.application.queries.customer.SearchCustomersQuery;
-import com.cybermanager.application.services.customer.CustomerApplicationService;
-import com.cybermanager.infrastructure.security.users.JwtAccessTokenReader;
+import com.cybermanager.api.abstracts.ApiSupport;
+import com.cybermanager.api.dtos.customer.*;
+import com.cybermanager.api.dtos.sales.SaleLineResponse;
+import com.cybermanager.api.mappers.customer.CustomerApiMapper;
+import com.cybermanager.application.usecases.customer.*;
+import com.cybermanager.domain.queries.customer.*;
+import com.cybermanager.infrastructure.out.adapters.security.users.JwtAccessTokenReader;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,17 +16,58 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.cybermanager.api.dtos.customer.GeneratedArchiveFileResponse;
-
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
-    private final CustomerApplicationService service;
-    private final JwtAccessTokenReader tokenReader;
 
-    public CustomerController(CustomerApplicationService service, JwtAccessTokenReader tokenReader) {
-        this.service = service;
+    private final SearchCustomersUseCase searchCustomersUseCase;
+    private final SearchCustomerArchiveCandidatesUseCase searchCustomerArchiveCandidatesUseCase;
+    private final ListGeneratedArchiveFilesUseCase listGeneratedArchiveFilesUseCase;
+    private final GetCustomerDetailsUseCase getCustomerDetailsUseCase;
+    private final CreateCustomerUseCase createCustomerUseCase;
+    private final UpdateCustomerUseCase updateCustomerUseCase;
+    private final ConvertCustomerToSubscriberUseCase convertCustomerToSubscriberUseCase;
+    private final SearchOpenDebtsUseCase searchOpenDebtsUseCase;
+    private final SettleDebtUseCase settleDebtUseCase;
+    private final ReattachDebtToSessionUseCase reattachDebtToSessionUseCase;
+    private final CreateDebtFromSaleUseCase createDebtFromSaleUseCase;
+    private final ArchiveCustomersUseCase archiveCustomersUseCase;
+    private final ExportCustomerDebtReportUseCase exportCustomerDebtReportUseCase;
+    private final JwtAccessTokenReader tokenReader;
+    private final CustomerApiMapper customerApiMapper;
+
+    public CustomerController(
+            SearchCustomersUseCase searchCustomersUseCase,
+            SearchCustomerArchiveCandidatesUseCase searchCustomerArchiveCandidatesUseCase,
+            ListGeneratedArchiveFilesUseCase listGeneratedArchiveFilesUseCase,
+            GetCustomerDetailsUseCase getCustomerDetailsUseCase,
+            CreateCustomerUseCase createCustomerUseCase,
+            UpdateCustomerUseCase updateCustomerUseCase,
+            ConvertCustomerToSubscriberUseCase convertCustomerToSubscriberUseCase,
+            SearchOpenDebtsUseCase searchOpenDebtsUseCase,
+            SettleDebtUseCase settleDebtUseCase,
+            ReattachDebtToSessionUseCase reattachDebtToSessionUseCase,
+            CreateDebtFromSaleUseCase createDebtFromSaleUseCase,
+            ArchiveCustomersUseCase archiveCustomersUseCase,
+            ExportCustomerDebtReportUseCase exportCustomerDebtReportUseCase,
+            JwtAccessTokenReader tokenReader,
+            CustomerApiMapper customerApiMapper
+    ) {
+        this.searchCustomersUseCase = searchCustomersUseCase;
+        this.searchCustomerArchiveCandidatesUseCase = searchCustomerArchiveCandidatesUseCase;
+        this.listGeneratedArchiveFilesUseCase = listGeneratedArchiveFilesUseCase;
+        this.getCustomerDetailsUseCase = getCustomerDetailsUseCase;
+        this.createCustomerUseCase = createCustomerUseCase;
+        this.updateCustomerUseCase = updateCustomerUseCase;
+        this.convertCustomerToSubscriberUseCase = convertCustomerToSubscriberUseCase;
+        this.searchOpenDebtsUseCase = searchOpenDebtsUseCase;
+        this.settleDebtUseCase = settleDebtUseCase;
+        this.reattachDebtToSessionUseCase = reattachDebtToSessionUseCase;
+        this.createDebtFromSaleUseCase = createDebtFromSaleUseCase;
+        this.archiveCustomersUseCase = archiveCustomersUseCase;
+        this.exportCustomerDebtReportUseCase = exportCustomerDebtReportUseCase;
         this.tokenReader = tokenReader;
+        this.customerApiMapper = customerApiMapper;
     }
 
     @GetMapping
@@ -44,7 +75,7 @@ public class CustomerController {
             @RequestParam(name = "term", required = false) String term,
             @RequestParam(name = "type", required = false) String type
     ) {
-        return ResponseEntity.ok(service.execute(new SearchCustomersQuery(term, type)).stream()
+        return ResponseEntity.ok(searchCustomersUseCase.execute(new SearchCustomersQuery(term, type)).stream()
                 .map(view -> new CustomerResponse(view.customerId(), view.name(), view.type(), view.status(), view.remainingMinutes(), view.openDebtAmount()))
                 .toList());
     }
@@ -55,7 +86,7 @@ public class CustomerController {
             @RequestParam("endDate") LocalDate endDate,
             @RequestParam(name = "type", required = false) String type
     ) {
-        return ResponseEntity.ok(service.execute(new SearchCustomerArchiveCandidatesQuery(startDate, endDate, type)).stream()
+        return ResponseEntity.ok(searchCustomerArchiveCandidatesUseCase.execute(new SearchCustomerArchiveCandidatesQuery(startDate, endDate, type)).stream()
                 .map(candidate -> new ArchiveCustomerCandidateResponse(
                         candidate.customerId(),
                         candidate.name(),
@@ -74,14 +105,14 @@ public class CustomerController {
 
     @GetMapping("/archive/files")
     public ResponseEntity<List<GeneratedArchiveFileResponse>> generatedArchiveFiles() {
-        return ResponseEntity.ok(service.execute(new ListGeneratedArchiveFilesQuery()).stream()
+        return ResponseEntity.ok(listGeneratedArchiveFilesUseCase.execute(new ListGeneratedArchiveFilesQuery()).stream()
                 .map(file -> new GeneratedArchiveFileResponse(file.id(), file.fileName(), file.fileType(), file.generatedBy(), file.generatedAt()))
                 .toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CustomerDetailsResponse> get(@PathVariable("id") UUID id) {
-        var view = service.execute(new GetCustomerDetailsQuery(id));
+        var view = getCustomerDetailsUseCase.execute(new GetCustomerDetailsQuery(id));
         return ResponseEntity.ok(new CustomerDetailsResponse(
                 view.customerId(),
                 view.name(),
@@ -97,7 +128,10 @@ public class CustomerController {
                         purchase.debtLabel(),
                         purchase.soldAt(),
                         purchase.totalAmount(),
-                        purchase.openDebt()
+                        purchase.openDebt(),
+                        purchase.debtId(),
+                        purchase.lines().stream().map(line -> new SaleLineResponse(line.label(), line.quantity(),
+                                line.unitPrice(), line.totalPrice())).toList()
                 )).toList(),
                 view.debts().stream().map(debt -> new CustomerDebtResponse(
                         debt.debtId(),
@@ -114,28 +148,28 @@ public class CustomerController {
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@RequestHeader("Authorization") String authorization, @RequestBody CustomerRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new CreateCustomerCommand(actor.email(), actor.roles(), request.name(), request.type(), request.subscriptionOfferId()));
+        var view = createCustomerUseCase.execute(customerApiMapper.toCreateCustomerCommand(actor.email(), actor.roles(), request));
         return ResponseEntity.ok(new CustomerResponse(view.customerId(), view.name(), view.type(), view.status(), view.remainingMinutes(), view.openDebtAmount()));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CustomerResponse> update(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id, @RequestBody CustomerRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new UpdateCustomerCommand(actor.email(), actor.roles(), id, request.name()));
+        var view = updateCustomerUseCase.execute(customerApiMapper.toUpdateCustomerCommand(actor.email(), actor.roles(), id, request));
         return ResponseEntity.ok(new CustomerResponse(view.customerId(), view.name(), view.type(), view.status(), view.remainingMinutes(), view.openDebtAmount()));
     }
 
     @PostMapping("/{id}/convert-to-subscriber")
     public ResponseEntity<ConversionResponse> convert(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id, @RequestBody ConvertToSubscriberRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new ConvertCustomerToSubscriberCommand(actor.email(), actor.roles(), id, request.subscriptionOfferId(), request.deductCurrentSession(), request.sessionId()));
+        var view = convertCustomerToSubscriberUseCase.execute(customerApiMapper.toConvertCustomerToSubscriberCommand(actor.email(), actor.roles(), id, request));
         var customer = view.customer();
         return ResponseEntity.ok(new ConversionResponse(new CustomerResponse(customer.customerId(), customer.name(), customer.type(), customer.status(), customer.remainingMinutes(), customer.openDebtAmount()), view.saleId(), view.deductedMinutes()));
     }
 
     @GetMapping("/debts")
     public ResponseEntity<List<DebtCustomerResponse>> debts() {
-        return ResponseEntity.ok(service.execute(new SearchOpenDebtsQuery()).stream()
+        return ResponseEntity.ok(searchOpenDebtsUseCase.execute(new SearchOpenDebtsQuery()).stream()
                 .map(customer -> new DebtCustomerResponse(
                         customer.customerId(),
                         customer.customerName(),
@@ -157,28 +191,28 @@ public class CustomerController {
     @PostMapping("/debts/{debtId}/settle")
     public ResponseEntity<Void> settleDebt(@RequestHeader("Authorization") String authorization, @PathVariable("debtId") UUID debtId, @RequestBody(required = false) SettleDebtRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        service.execute(new SettleDebtCommand(actor.email(), actor.roles(), debtId, request == null ? null : request.comment()));
+        settleDebtUseCase.execute(customerApiMapper.toSettleDebtCommand(actor.email(), actor.roles(), debtId, request));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/debts/{debtId}/reattach-to-session")
     public ResponseEntity<Void> reattachDebtToSession(@RequestHeader("Authorization") String authorization, @PathVariable("debtId") UUID debtId, @RequestBody ReattachDebtToSessionRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        service.execute(new ReattachDebtToSessionCommand(actor.email(), actor.roles(), debtId, request.sessionId()));
+        reattachDebtToSessionUseCase.execute(customerApiMapper.toReattachDebtToSessionCommand(actor.email(), actor.roles(), debtId, request));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/sales/{saleId}/create-debt")
     public ResponseEntity<Void> createDebtFromSale(@RequestHeader("Authorization") String authorization, @PathVariable("saleId") UUID saleId) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        service.execute(new CreateDebtFromSaleCommand(actor.email(), actor.roles(), saleId));
+        createDebtFromSaleUseCase.execute(customerApiMapper.toCreateDebtFromSaleCommand(actor.email(), actor.roles(), saleId));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/archive/export")
     public ResponseEntity<byte[]> archiveCustomers(@RequestHeader("Authorization") String authorization, @RequestBody ArchiveCustomersRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var result = service.execute(new ArchiveCustomersCommand(actor.email(), actor.roles(), request.startDate(), request.endDate(), request.type(), request.format()));
+        var result = archiveCustomersUseCase.execute(customerApiMapper.toArchiveCustomersCommand(actor.email(), actor.roles(), request));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
                 .header("X-Archived-Count", String.valueOf(result.archivedCustomers()))
@@ -194,10 +228,11 @@ public class CustomerController {
             @RequestParam(name = "type", required = false) String type
     ) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var result = service.execute(new ExportCustomerDebtReportQuery(actor.email(), startDate, endDate, type));
+        var result = exportCustomerDebtReportUseCase.execute(new ExportCustomerDebtReportQuery(actor.email(), startDate, endDate, type));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
                 .contentType(MediaType.parseMediaType(result.mediaType()))
                 .body(result.content());
     }
+
 }

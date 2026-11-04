@@ -3,14 +3,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { CmButtonComponent, CmInputComponent, CmSelectComponent } from '../../../shared/components/design-system';
 import type { SubscriptionOffer } from '../models/subscription-offer.models';
 import { SubscriptionOffersApiService } from '../services/subscription-offers-api.service';
 
 @Component({
   selector: 'app-subscription-offers-page',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CmButtonComponent, CmInputComponent, CmSelectComponent],
   template: `
-    <section class="page">
+    <section class="page crud-page subscription-offers-page">
       <header class="hero">
         <div>
           <p class="eyebrow">Bounded context subscription</p>
@@ -20,184 +21,103 @@ import { SubscriptionOffersApiService } from '../services/subscription-offers-ap
 
       <p class="error" *ngIf="error()">{{ error() }}</p>
 
-      <div class="toolbar">
+      <div class="toolbar crud-toolbar">
         <div class="section-title-group">
-          <button type="button" class="ghost filter-toggle" (click)="showFilters.set(!showFilters())" [attr.aria-expanded]="showFilters()">
+          <cm-button variant="ghost" (click)="showFilters.set(!showFilters())" [attr.aria-expanded]="showFilters()">
             <span class="filter-icon" aria-hidden="true"></span>
             <span>Filtres</span>
-          </button>
-          <button type="button" (click)="openCreatePanel()">Creer une nouvelle offre</button>
-        </div>
-
-        <p class="summary">
-          {{ filteredOffers().length }} offre{{ filteredOffers().length > 1 ? 's' : '' }}
-          <span *ngIf="filteredOffers().length !== offers().length">sur {{ offers().length }}</span>
-        </p>
-
-        <div class="pager" *ngIf="totalPages() > 1">
-          <button type="button" class="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Precedent</button>
-          <span>Page {{ currentPage() }} / {{ totalPages() }}</span>
-          <button type="button" class="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Suivant</button>
+          </cm-button>
+          <cm-button (click)="openCreatePanel()">Creer une nouvelle offre</cm-button>
         </div>
       </div>
 
       <div class="filters-grid collapsible" [class.is-collapsed]="!showFilters()" [formGroup]="filters">
-        <label class="field">
-          <span>Recherche par nom</span>
-          <input formControlName="term" placeholder="Nom de l'offre" />
-        </label>
+        <cm-input label="Recherche par nom" formControlName="term" placeholder="Nom de l'offre" />
 
-        <label class="field">
-          <span>Statut</span>
-          <select formControlName="status">
-            <option value="">Tous les statuts</option>
-            <option value="ACTIVE">Actives</option>
-            <option value="INACTIVE">Inactives</option>
-          </select>
-        </label>
+        <cm-select label="Statut" formControlName="status">
+          <option value="">Tous les statuts</option>
+          <option value="ACTIVE">Actives</option>
+          <option value="INACTIVE">Inactives</option>
+        </cm-select>
 
-        <label class="field">
-          <span>Taille de page</span>
-          <select formControlName="pageSize">
-            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
-          </select>
-        </label>
+        <cm-select label="Taille de page" formControlName="pageSize">
+          <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
+        </cm-select>
       </div>
 
-      <div class="grid" [class.panel-open]="isPanelOpen()">
-        <article class="panel list-panel">
-          <div class="panel-header">
+      <div class="grid crud-grid" [class.panel-open]="isPanelOpen()">
+        <article class="panel list-panel crud-list-panel">
+          <div class="panel-header results-toolbar">
             <h3>Liste</h3>
+            <div class="section-tools">
+              <p class="summary crud-summary">
+                {{ filteredOffers().length }} offre{{ filteredOffers().length > 1 ? 's' : '' }}
+                <span *ngIf="filteredOffers().length !== offers().length">sur {{ offers().length }}</span>
+              </p>
+              <div class="pager" *ngIf="totalPages() > 1">
+                <cm-button variant="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Precedent</cm-button>
+                <span>Page {{ currentPage() }} / {{ totalPages() }}</span>
+                <cm-button variant="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Suivant</cm-button>
+              </div>
+            </div>
           </div>
 
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Nom</th>
-                <th>Duree</th>
-                <th>Prix</th>
-                <th>Statut</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of paginatedOffers()" [class.active]="selected()?.offerId === item.offerId">
-                <td><strong>{{ item.name }}</strong></td>
-                <td class="muted">{{ item.includedMinutes }} min</td>
-                <td>{{ item.price | number:'1.2-2' }} EUR</td>
-                <td>
-                  <span class="status-badge" [class.active]="item.status === 'ACTIVE'" [class.inactive]="item.status === 'INACTIVE'">
-                    {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td><button type="button" (click)="edit(item)">Modifier</button></td>
-              </tr>
+          <div class="table-shell">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Duree</th>
+                  <th>Prix</th>
+                  <th>Statut</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of paginatedOffers()" [class.active]="selected()?.offerId === item.offerId">
+                  <td><strong>{{ item.name }}</strong></td>
+                  <td class="muted">{{ item.includedMinutes }} min</td>
+                  <td>{{ item.price | number:'1.2-2' }} EUR</td>
+                  <td>
+                    <span class="status-badge" [class.active]="item.status === 'ACTIVE'" [class.inactive]="item.status === 'INACTIVE'">
+                      {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="action-cell"><cm-button (click)="edit(item)">Modifier</cm-button></td>
+                </tr>
 
-              <tr *ngIf="paginatedOffers().length === 0">
-                <td colspan="5" class="empty">Aucune offre pour ce filtre.</td>
-              </tr>
-            </tbody>
-          </table>
+                <tr *ngIf="paginatedOffers().length === 0">
+                  <td colspan="5" class="empty">Aucune offre pour ce filtre.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </article>
 
-        <form class="panel side-panel form" [class.open]="isPanelOpen()" [formGroup]="form" (ngSubmit)="save()" [attr.aria-hidden]="!isPanelOpen()">
+        <form class="panel side-panel crud-side-panel form crud-form" [class.open]="isPanelOpen()" [formGroup]="form" (ngSubmit)="save()" [attr.aria-hidden]="!isPanelOpen()">
           <div class="side-panel-header">
             <h3>{{ selected() ? 'Edition offre' : 'Creation offre' }}</h3>
-            <button type="button" class="icon-button" (click)="closePanel()">Fermer</button>
+            <cm-button variant="icon" (click)="closePanel()">Fermer</cm-button>
           </div>
 
-          <label>
-            Nom
-            <input formControlName="name" placeholder="Nom de l'offre" />
-          </label>
+          <cm-input label="Nom" formControlName="name" placeholder="Nom de l'offre" />
 
-          <label>
-            Prix
-            <input formControlName="price" type="number" step="0.01" min="0.01" placeholder="Prix" />
-          </label>
+          <cm-input label="Prix" formControlName="price" type="number" valueKind="number" step="0.01" min="0.01" placeholder="Prix" />
 
-          <label>
-            Minutes incluses
-            <input formControlName="includedMinutes" type="number" min="1" placeholder="Minutes incluses" />
-          </label>
+          <cm-input label="Minutes incluses" formControlName="includedMinutes" type="number" valueKind="number" min="1" placeholder="Minutes incluses" />
 
           <div class="actions">
-            <button type="submit" [disabled]="form.invalid">Enregistrer</button>
-            <button *ngIf="selected()" type="button" class="secondary" (click)="toggleStatus()">
+            <cm-button type="submit" [disabled]="form.invalid">Enregistrer</cm-button>
+            <cm-button *ngIf="selected()" variant="secondary" (click)="toggleStatus()">
               {{ selected()?.status === 'ACTIVE' ? 'Desactiver' : 'Activer' }}
-            </button>
-            <button *ngIf="selected()" type="button" class="danger" (click)="deleteOffer()">Supprimer</button>
+            </cm-button>
+            <cm-button *ngIf="selected()" variant="danger" (click)="deleteOffer()">Supprimer</cm-button>
           </div>
         </form>
       </div>
     </section>
   `,
-  styles: `
-    .page, .form { display: grid; gap: 1rem; }
-    .hero { display: grid; gap: 1rem; }
-    .eyebrow { margin: 0; color: #ff7b00; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.72rem; }
-    input, select { border: 1px solid #cbd5e1; border-radius: 0.85rem; padding: 0.8rem 0.9rem; font: inherit; background: #fff; }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-    .summary { margin: 0; color: #334155; font-weight: 600; }
-    .pager { display: inline-flex; align-items: center; gap: 0.75rem; color: #475569; }
-    .section-title-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .filters-grid { grid-template-columns: repeat(3, max-content); justify-content: start; }
-    .filters-grid .field { display: grid; gap: 0.28rem; align-content: start; }
-    .filters-grid .field span { font-size: 0.78rem; font-weight: 700; color: #334155; line-height: 1.1; }
-    .filters-grid .field input, .filters-grid .field select { width: auto; min-width: 9.5rem; max-width: 12rem; border-radius: 999px; background: #fff; padding: 0.62rem 0.8rem !important; }
-    .filter-toggle { padding: 0.5rem 0.78rem !important; border-radius: 999px !important; }
-    .filter-icon { position: relative; display: inline-block; width: 0.88rem; height: 0.7rem; }
-    .filter-icon::before { content: ""; position: absolute; left: 0; right: 0; top: 0.02rem; height: 0.12rem; border-radius: 999px; background: currentColor; box-shadow: 0 0.24rem 0 currentColor, 0 0.48rem 0 currentColor; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1fr) 0fr; gap: 1.5rem; align-items: start; transition: grid-template-columns 220ms ease-out; }
-    .grid.panel-open { grid-template-columns: minmax(0, 1.4fr) minmax(22rem, 0.88fr); }
-    .panel { background: rgba(255,255,255,0.84); border-radius: 1.2rem; padding: 1.1rem; }
-    .list-panel { overflow: hidden; }
-    .panel-header, .side-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .panel-header h3, .side-panel-header h3 { margin: 0; }
-    .table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 1rem; overflow: hidden; table-layout: fixed; }
-    th, td { padding: 0.72rem 0.85rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-    th { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
-    tbody tr { transition: background 160ms ease; }
-    tbody tr:hover, tbody tr.active { background: #fff7ed; }
-    strong { display: block; line-height: 1.2; }
-    .muted { color: #64748b; }
-    .empty { text-align: center; color: #64748b; padding: 1rem; }
-    .side-panel {
-      overflow: hidden;
-      opacity: 0;
-      transform: translateX(14px) scale(0.985);
-      transform-origin: right center;
-      pointer-events: none;
-      max-width: 0;
-      padding-inline: 0;
-      transition:
-        opacity 170ms ease-out,
-        transform 220ms ease-out,
-        max-width 220ms ease-out,
-        padding-inline 220ms ease-out;
-    }
-    .side-panel.open {
-      opacity: 1;
-      transform: translateX(0) scale(1);
-      pointer-events: auto;
-      max-width: 100%;
-      padding-inline: 1.1rem;
-    }
-    label { display: grid; gap: 0.4rem; color: #1e293b; font-weight: 600; }
-    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-    .error { margin: 0; color: #991b1b; font-weight: 700; }
-    .status-badge { display: inline-flex; align-items: center; padding: 0.34rem 0.76rem; border-radius: 999px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.01em; }
-    .status-badge.active { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #166534; box-shadow: inset 0 0 0 1px rgba(22, 101, 52, 0.08); }
-    .status-badge.inactive { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #991b1b; box-shadow: inset 0 0 0 1px rgba(153, 27, 27, 0.08); }
-
-    @media (max-width: 1000px) {
-      .filters-grid { grid-template-columns: 1fr; }
-      .filters-grid .field input, .filters-grid .field select { width: 100%; min-width: 0; max-width: none; }
-      .grid, .grid.panel-open { grid-template-columns: 1fr; }
-      .side-panel, .side-panel.open { max-width: none; padding-inline: 1.1rem; opacity: 1; transform: none; }
-      .side-panel:not(.open) { display: none; }
-    }
-  `,
+  styleUrl: './subscription-offers-page.component.css',
 })
 export class SubscriptionOffersPageComponent {
   private readonly api = inject(SubscriptionOffersApiService);

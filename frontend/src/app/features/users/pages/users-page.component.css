@@ -1,0 +1,23 @@
+.users-page .filters-grid {
+  grid-template-columns: repeat(4, max-content);
+}
+
+.users-page .filters-grid cm-input,
+.users-page .filters-grid cm-select {
+  width: auto;
+  min-width: 9.5rem;
+  max-width: 12rem;
+}
+
+@media (max-width: 1000px) {
+  .users-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .users-page .filters-grid cm-input,
+  .users-page .filters-grid cm-select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../../environments/environment';
-import type { Customer, CustomerDetails } from '../models/customer.models';
+import type { Customer, CustomerComment, CustomerDetails } from '../models/customer.models';
 
 @Injectable({ providedIn: 'root' })
 export class CustomersApiService {
@@ -18,6 +18,14 @@ export class CustomersApiService {
 
   get(id: string) {
     return this.http.get<CustomerDetails>(`${this.baseUrl}/${id}`);
+  }
+
+  getComment(id: string) {
+    return this.http.get<CustomerComment>(`${this.baseUrl}/${id}/comment`);
+  }
+
+  updateComment(id: string, comment: string | null) {
+    return this.http.patch<CustomerComment>(`${this.baseUrl}/${id}/comment`, { comment });
   }
 
   create(payload: { name: string; type: 'WALK_IN' | 'SUBSCRIBER'; subscriptionOfferId?: string | null }) {

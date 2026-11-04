@@ -150,44 +150,7 @@ import { SalesApiService } from '../services/sales-api.service';
       </div>
     </section>
   `,
-  styles: `
-    .page { display: grid; gap: 1.5rem; }
-    .hero { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
-    .eyebrow { margin: 0; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.72rem; color: #9a3412; }
-    .hero h2 { margin: 0.35rem 0 0.5rem; }
-    .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.9rem; align-items: center; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1rem; align-items: start; }
-    .panel { background: #fff; padding: 1.25rem; border-radius: 1.25rem; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08); display: grid; gap: 1rem; }
-    .add-tier-panel { align-self: start; overflow: hidden; transition: opacity 220ms ease, transform 240ms ease, max-height 260ms ease, padding 220ms ease; transform-origin: top; max-height: 28rem; opacity: 1; transform: translateY(0) scale(1); }
-    .add-tier-panel.is-collapsed { max-height: 0; opacity: 0; transform: translateY(-10px) scale(0.98); padding-top: 0; padding-bottom: 0; pointer-events: none; }
-    .add-tier-body { display: grid; gap: 1rem; }
-    form { display: grid; gap: 0.85rem; }
-    label { display: grid; gap: 0.45rem; font-weight: 600; color: #1e293b; }
-    input, button, .link-button { padding: 0.72rem 0.88rem; border-radius: 0.9rem; border: 1px solid #cbd5e1; font: inherit; }
-    button, .link-button { background: #14213d; color: #fff; border: 0; text-decoration: none; font-weight: 700; cursor: pointer; }
-    .secondary { background: #e2e8f0; color: #0f172a; }
-    .danger { background: #fee2e2; color: #991b1b; }
-    .empty, .panel-header p { margin: 0; color: #475569; }
-    .feedback { margin: 0; padding: 0.8rem 0.95rem; border-radius: 0.9rem; }
-    .feedback.error { background: #fef2f2; color: #991b1b; }
-    .feedback.success { background: #ecfdf5; color: #166534; }
-    .feedback.warning { background: #fff7ed; color: #9a3412; }
-    .panel-header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { padding: 0.58rem 0.6rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-    .inline-edit { display: inline-flex; align-items: center; gap: 0.4rem; }
-    .inline-edit input, .price-input { width: 4.4rem; padding: 0.48rem 0.58rem; border-radius: 0.75rem; }
-    .price-input { width: 5.6rem; }
-    .row-actions { display: flex; gap: 0.45rem; justify-content: flex-end; flex-wrap: wrap; }
-    .actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
-    .calculator-modal { width: min(32rem, 100%); display: grid; gap: 1rem; }
-    .calculator-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    @media (max-width: 960px) {
-      .hero, .panel-header, .actions { flex-direction: column; }
-      .grid { grid-template-columns: 1fr; }
-      .calculator-form { grid-template-columns: 1fr; }
-    }
-  `,
+  styleUrl: './connection-pricing-page.component.css',
 })
 export class ConnectionPricingPageComponent {
   private readonly salesApi = inject(SalesApiService);
@@ -204,17 +167,17 @@ export class ConnectionPricingPageComponent {
   readonly canReturnToSales = signal(false);
   readonly tierForm = this.fb.nonNullable.group({
     hours: [0],
-    minutes: [30],
-    price: [1.5],
+    minutes: [0],
+    price: [0],
   });
   readonly editTierForm = this.fb.nonNullable.group({
     hours: [0],
-    minutes: [30],
-    price: [1.5],
+    minutes: [0],
+    price: [0],
   });
   readonly calculatorForm = this.fb.nonNullable.group({
     hours: [0],
-    minutes: [30],
+    minutes: [0],
   });
   readonly calculatorState = signal(this.calculatorForm.getRawValue());
   readonly calculatorDuration = computed(() => {
@@ -286,7 +249,7 @@ export class ConnectionPricingPageComponent {
     const filtered = this.tiers().filter((tier) => this.tierKey(tier) !== this.tierKey(nextTier) && tier.durationMinutes !== durationMinutes);
     filtered.push(nextTier);
     this.tiers.set(this.sortTiers(filtered));
-    this.tierForm.reset({ hours: 0, minutes: 30, price: 1.5 });
+    this.tierForm.reset({ hours: 0, minutes: 0, price: 0 });
     this.errorMessage.set('');
     this.successMessage.set('La nouvelle plage a ete preparee. Valide la grille pour la prendre en compte.');
   }
@@ -304,7 +267,7 @@ export class ConnectionPricingPageComponent {
 
   cancelTierEdit(): void {
     this.editingTierKey.set(null);
-    this.editTierForm.reset({ hours: 0, minutes: 30, price: 1.5 });
+    this.editTierForm.reset({ hours: 0, minutes: 0, price: 0 });
     this.errorMessage.set('');
   }
 
@@ -377,7 +340,7 @@ export class ConnectionPricingPageComponent {
     }).subscribe((pricing) => {
       this.loadedTiers.set(pricing.tiers);
       this.tiers.set(pricing.tiers);
-      this.tierForm.reset({ hours: 0, minutes: 30, price: 1.5 });
+      this.tierForm.reset({ hours: 0, minutes: 0, price: 0 });
       this.editingTierKey.set(null);
       this.errorMessage.set('');
       this.successMessage.set('La nouvelle grille tarifaire a bien ete prise en compte.');

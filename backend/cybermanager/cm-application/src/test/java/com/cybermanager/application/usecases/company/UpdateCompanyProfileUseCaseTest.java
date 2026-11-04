@@ -1,0 +1,13 @@
+package com.cybermanager.application.usecases.company;
+
+import com.cybermanager.application.ApplicationClassContractAssertions;
+import org.junit.jupiter.api.Test;
+
+class UpdateCompanyProfileUseCaseTest {
+
+    @Test
+    void shouldExposeSingleExecuteMethod() {
+        ApplicationClassContractAssertions.assertSinglePublicExecuteMethod(UpdateCompanyProfileUseCase.class);
+    }
+
+}

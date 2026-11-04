@@ -9,4 +9,5 @@ public record InvoicePdfView(
         String mediaType,
         byte[] content
 ) {
+
 }

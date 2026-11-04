@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
+import { CmButtonComponent, CmInputComponent, CmSelectComponent } from '../../../shared/components/design-system';
 import type { UserResponse } from '../models/user.models';
 import { UserFormComponent } from '../components/user-form.component';
 import { UsersTableComponent } from '../components/users-table.component';
@@ -10,9 +11,9 @@ import { UsersApiService } from '../services/users-api.service';
 
 @Component({
   selector: 'app-users-page',
-  imports: [CommonModule, ReactiveFormsModule, UsersTableComponent, UserFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, UsersTableComponent, UserFormComponent, CmButtonComponent, CmInputComponent, CmSelectComponent],
   template: `
-    <section class="page">
+    <section class="page crud-page users-page">
       <header class="hero">
         <div>
           <p class="eyebrow">Bounded context users</p>
@@ -22,62 +23,50 @@ import { UsersApiService } from '../services/users-api.service';
 
       <p class="error" *ngIf="error()">{{ error() }}</p>
 
-      <div class="toolbar">
+      <div class="toolbar crud-toolbar">
         <div class="section-title-group">
-          <button type="button" class="ghost filter-toggle" (click)="showFilters.set(!showFilters())" [attr.aria-expanded]="showFilters()">
+          <cm-button variant="ghost" (click)="showFilters.set(!showFilters())" [attr.aria-expanded]="showFilters()">
             <span class="filter-icon" aria-hidden="true"></span>
             <span>Filtres</span>
-          </button>
-          <button type="button" (click)="openCreatePanel()">Creer un nouvel utilisateur</button>
-        </div>
-
-        <p class="summary">
-          {{ filteredUsers().length }} utilisateur{{ filteredUsers().length > 1 ? 's' : '' }}
-          <span *ngIf="filteredUsers().length !== users().length">sur {{ users().length }}</span>
-        </p>
-
-        <div class="pager" *ngIf="totalPages() > 1">
-          <button type="button" class="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Precedent</button>
-          <span>Page {{ currentPage() }} / {{ totalPages() }}</span>
-          <button type="button" class="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Suivant</button>
+          </cm-button>
+          <cm-button (click)="openCreatePanel()">Creer un nouvel utilisateur</cm-button>
         </div>
       </div>
 
       <div class="filters-grid collapsible" [class.is-collapsed]="!showFilters()" [formGroup]="filters">
-        <label class="field">
-          <span>Recherche par nom</span>
-          <input type="search" formControlName="term" placeholder="Nom ou prenom" />
-        </label>
+        <cm-input label="Recherche par nom" type="search" formControlName="term" placeholder="Nom ou prenom" />
 
-        <label class="field">
-          <span>Role</span>
-          <select formControlName="role">
-            <option value="">Tous les roles</option>
-            <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
-          </select>
-        </label>
+        <cm-select label="Role" formControlName="role">
+          <option value="">Tous les roles</option>
+          <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+        </cm-select>
 
-        <label class="field">
-          <span>Statut</span>
-          <select formControlName="status">
-            <option value="">Tous les statuts</option>
-            <option value="ACTIVE">Actifs</option>
-            <option value="DISABLED">Desactives</option>
-          </select>
-        </label>
+        <cm-select label="Statut" formControlName="status">
+          <option value="">Tous les statuts</option>
+          <option value="ACTIVE">Actifs</option>
+          <option value="DISABLED">Desactives</option>
+        </cm-select>
 
-        <label class="field">
-          <span>Taille de page</span>
-          <select formControlName="pageSize">
-            <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
-          </select>
-        </label>
+        <cm-select label="Taille de page" formControlName="pageSize">
+          <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }} / page</option>
+        </cm-select>
       </div>
 
-      <div class="grid" [class.panel-open]="isPanelOpen()">
-        <article class="panel list-panel">
-          <div class="panel-header">
+      <div class="grid crud-grid" [class.panel-open]="isPanelOpen()">
+        <article class="panel list-panel crud-list-panel">
+          <div class="panel-header results-toolbar">
             <h3>Liste</h3>
+            <div class="section-tools">
+              <p class="summary crud-summary">
+                {{ filteredUsers().length }} utilisateur{{ filteredUsers().length > 1 ? 's' : '' }}
+                <span *ngIf="filteredUsers().length !== users().length">sur {{ users().length }}</span>
+              </p>
+              <div class="pager" *ngIf="totalPages() > 1">
+                <cm-button variant="ghost" (click)="previousPage()" [disabled]="currentPage() === 1">Precedent</cm-button>
+                <span>Page {{ currentPage() }} / {{ totalPages() }}</span>
+                <cm-button variant="ghost" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Suivant</cm-button>
+              </div>
+            </div>
           </div>
 
           <app-users-table
@@ -87,10 +76,10 @@ import { UsersApiService } from '../services/users-api.service';
           />
         </article>
 
-        <article class="panel side-panel" [class.open]="isPanelOpen()" [attr.aria-hidden]="!isPanelOpen()">
+        <article class="panel side-panel crud-side-panel" [class.open]="isPanelOpen()" [attr.aria-hidden]="!isPanelOpen()">
           <div class="side-panel-header">
             <h3>{{ panelMode() === 'edit' ? 'Edition utilisateur' : 'Creation utilisateur' }}</h3>
-            <button type="button" class="icon-button" (click)="closePanel()">Fermer</button>
+            <cm-button variant="icon" (click)="closePanel()">Fermer</cm-button>
           </div>
 
           <app-user-form
@@ -104,62 +93,7 @@ import { UsersApiService } from '../services/users-api.service';
       </div>
     </section>
   `,
-  styles: `
-    .page, .panel { display: grid; gap: 1rem; }
-    .hero { display: grid; gap: 1rem; }
-    .eyebrow { margin: 0; color: #ff7b00; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.72rem; }
-    input, select { border: 1px solid #cbd5e1; border-radius: 0.85rem; padding: 0.8rem 0.9rem; font: inherit; background: #fff; }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-    .summary { margin: 0; color: #334155; font-weight: 600; }
-    .pager { display: inline-flex; align-items: center; gap: 0.75rem; color: #475569; }
-    .section-title-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .filters-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .filters-grid .field { display: grid; gap: 0.28rem; align-content: start; }
-    .filters-grid .field span { font-size: 0.78rem; font-weight: 700; color: #334155; line-height: 1.1; }
-    .filters-grid .field input, .filters-grid .field select { width: 100%; border-radius: 999px; background: #fff; }
-    .filter-toggle { padding: 0.5rem 0.78rem !important; border-radius: 999px !important; }
-    .filter-icon { position: relative; display: inline-block; width: 0.88rem; height: 0.7rem; }
-    .filter-icon::before { content: ""; position: absolute; left: 0; right: 0; top: 0.02rem; height: 0.12rem; border-radius: 999px; background: currentColor; box-shadow: 0 0.24rem 0 currentColor, 0 0.48rem 0 currentColor; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1fr) 0fr; gap: 1.5rem; align-items: start; transition: grid-template-columns 280ms ease; }
-    .grid.panel-open { grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 0.9fr); }
-    .panel { background: rgba(255,255,255,0.84); border-radius: 1.2rem; padding: 1.1rem; }
-    .list-panel { overflow: hidden; }
-    .panel-header, .side-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .panel-header h3, .side-panel-header h3 { margin: 0; }
-    .side-panel {
-      overflow: hidden;
-      opacity: 0;
-      transform: translateX(18px) scale(0.98);
-      transform-origin: right center;
-      pointer-events: none;
-      max-width: 0;
-      padding-inline: 0;
-      transition:
-        opacity 220ms ease,
-        transform 280ms ease,
-        max-width 280ms ease,
-        padding-inline 280ms ease;
-    }
-    .side-panel.open {
-      opacity: 1;
-      transform: translateX(0) scale(1);
-      pointer-events: auto;
-      max-width: 100%;
-      padding-inline: 1.1rem;
-    }
-    button { border: 0; border-radius: 999px; padding: 0.8rem 1rem; background: #14213d; color: #fff; font-weight: 700; cursor: pointer; }
-    .secondary { background: #64748b; }
-    .ghost, .icon-button { background: #e2e8f0; color: #0f172a; }
-    button:disabled { opacity: 0.45; cursor: default; }
-    .error { margin: 0; color: #991b1b; font-weight: 700; }
-
-    @media (max-width: 1000px) {
-      .filters-grid { grid-template-columns: 1fr; }
-      .grid, .grid.panel-open { grid-template-columns: 1fr; }
-      .side-panel, .side-panel.open { max-width: none; padding-inline: 1.1rem; opacity: 1; transform: none; }
-      .side-panel:not(.open) { display: none; }
-    }
-  `,
+  styleUrl: './users-page.component.css',
 })
 export class UsersPageComponent {
   private readonly api = inject(UsersApiService);

@@ -16,4 +16,5 @@ public record InvoiceDetailView(
         BigDecimal totalAmount,
         List<InvoiceLineView> lines
 ) {
+
 }

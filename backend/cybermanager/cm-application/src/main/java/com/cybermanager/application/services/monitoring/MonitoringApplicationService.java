@@ -12,6 +12,7 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class MonitoringApplicationService {
+
     private final DailyMonitoringQuery queryAdapter;
 
     public MonitoringApplicationService(DailyMonitoringQuery queryAdapter) {
@@ -25,5 +26,6 @@ public class MonitoringApplicationService {
     public DailyCustomerActivityView customerActivity(UUID customerId) {
         return queryAdapter.getDailyCustomerActivity(customerId);
     }
+
 }
 

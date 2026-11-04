@@ -16,8 +16,8 @@ export class ProductsApiService {
     return this.http.get<Product[]>(this.baseUrl, { params });
   }
 
-  create(payload: Omit<Product, 'productId' | 'status'>) { return this.http.post<Product>(this.baseUrl, payload); }
-  update(productId: string, payload: Omit<Product, 'productId' | 'status'>) { return this.http.put<Product>(`${this.baseUrl}/${productId}`, payload); }
+  create(payload: { name: string; price: number; categoryId: string; description: string }) { return this.http.post<Product>(this.baseUrl, payload); }
+  update(productId: string, payload: { name: string; price: number; categoryId: string; description: string }) { return this.http.put<Product>(`${this.baseUrl}/${productId}`, payload); }
   activate(productId: string) { return this.http.put<Product>(`${this.baseUrl}/${productId}/activate`, {}); }
   deactivate(productId: string) { return this.http.put<Product>(`${this.baseUrl}/${productId}/deactivate`, {}); }
   delete(productId: string) { return this.http.delete<void>(`${this.baseUrl}/${productId}`); }

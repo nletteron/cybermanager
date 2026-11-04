@@ -1,17 +1,13 @@
 package com.cybermanager.api.controllers.subscription;
 
-import com.cybermanager.api.shared.ApiSupport;
-import com.cybermanager.api.dtos.subscription.SubscriptionOfferDtos.SubscriptionOfferRequest;
-import com.cybermanager.api.dtos.subscription.SubscriptionOfferDtos.SubscriptionOfferResponse;
-import com.cybermanager.application.commands.subscription.ActivateSubscriptionOfferCommand;
-import com.cybermanager.application.commands.subscription.CreateSubscriptionOfferCommand;
-import com.cybermanager.application.commands.subscription.DeactivateSubscriptionOfferCommand;
-import com.cybermanager.application.commands.subscription.DeleteSubscriptionOfferCommand;
-import com.cybermanager.application.commands.subscription.UpdateSubscriptionOfferCommand;
-import com.cybermanager.application.queries.subscription.GetSubscriptionOfferDetailsQuery;
-import com.cybermanager.application.queries.subscription.SearchSubscriptionOffersQuery;
-import com.cybermanager.application.services.subscription.SubscriptionApplicationService;
-import com.cybermanager.infrastructure.security.users.JwtAccessTokenReader;
+import com.cybermanager.api.abstracts.ApiSupport;
+import com.cybermanager.api.dtos.subscription.SubscriptionOfferRequest;
+import com.cybermanager.api.dtos.subscription.SubscriptionOfferResponse;
+import com.cybermanager.api.mappers.subscription.SubscriptionOfferApiMapper;
+import com.cybermanager.application.usecases.subscription.*;
+import com.cybermanager.domain.queries.subscription.GetSubscriptionOfferDetailsQuery;
+import com.cybermanager.domain.queries.subscription.SearchSubscriptionOffersQuery;
+import com.cybermanager.infrastructure.out.adapters.security.users.JwtAccessTokenReader;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,12 +17,37 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/subscription-offers")
 public class SubscriptionOfferController {
-    private final SubscriptionApplicationService service;
-    private final JwtAccessTokenReader tokenReader;
 
-    public SubscriptionOfferController(SubscriptionApplicationService service, JwtAccessTokenReader tokenReader) {
-        this.service = service;
+    private final SearchSubscriptionOffersUseCase searchSubscriptionOffersUseCase;
+    private final GetSubscriptionOfferDetailsUseCase getSubscriptionOfferDetailsUseCase;
+    private final CreateSubscriptionOfferUseCase createSubscriptionOfferUseCase;
+    private final UpdateSubscriptionOfferUseCase updateSubscriptionOfferUseCase;
+    private final ActivateSubscriptionOfferUseCase activateSubscriptionOfferUseCase;
+    private final DeactivateSubscriptionOfferUseCase deactivateSubscriptionOfferUseCase;
+    private final DeleteSubscriptionOfferUseCase deleteSubscriptionOfferUseCase;
+    private final JwtAccessTokenReader tokenReader;
+    private final SubscriptionOfferApiMapper subscriptionOfferApiMapper;
+
+    public SubscriptionOfferController(
+            SearchSubscriptionOffersUseCase searchSubscriptionOffersUseCase,
+            GetSubscriptionOfferDetailsUseCase getSubscriptionOfferDetailsUseCase,
+            CreateSubscriptionOfferUseCase createSubscriptionOfferUseCase,
+            UpdateSubscriptionOfferUseCase updateSubscriptionOfferUseCase,
+            ActivateSubscriptionOfferUseCase activateSubscriptionOfferUseCase,
+            DeactivateSubscriptionOfferUseCase deactivateSubscriptionOfferUseCase,
+            DeleteSubscriptionOfferUseCase deleteSubscriptionOfferUseCase,
+            JwtAccessTokenReader tokenReader,
+            SubscriptionOfferApiMapper subscriptionOfferApiMapper
+    ) {
+        this.searchSubscriptionOffersUseCase = searchSubscriptionOffersUseCase;
+        this.getSubscriptionOfferDetailsUseCase = getSubscriptionOfferDetailsUseCase;
+        this.createSubscriptionOfferUseCase = createSubscriptionOfferUseCase;
+        this.updateSubscriptionOfferUseCase = updateSubscriptionOfferUseCase;
+        this.activateSubscriptionOfferUseCase = activateSubscriptionOfferUseCase;
+        this.deactivateSubscriptionOfferUseCase = deactivateSubscriptionOfferUseCase;
+        this.deleteSubscriptionOfferUseCase = deleteSubscriptionOfferUseCase;
         this.tokenReader = tokenReader;
+        this.subscriptionOfferApiMapper = subscriptionOfferApiMapper;
     }
 
     @GetMapping
@@ -34,48 +55,49 @@ public class SubscriptionOfferController {
             @RequestParam(name = "term", required = false) String term,
             @RequestParam(name = "status", required = false) String status
     ) {
-        return ResponseEntity.ok(service.execute(new SearchSubscriptionOffersQuery(term, status)).stream().map(view -> new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status())).toList());
+        return ResponseEntity.ok(searchSubscriptionOffersUseCase.execute(new SearchSubscriptionOffersQuery(term, status)).stream().map(view -> new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status())).toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SubscriptionOfferResponse> get(@PathVariable("id") UUID id) {
-        var view = service.execute(new GetSubscriptionOfferDetailsQuery(id));
+        var view = getSubscriptionOfferDetailsUseCase.execute(new GetSubscriptionOfferDetailsQuery(id));
         return ResponseEntity.ok(new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status()));
     }
 
     @PostMapping
     public ResponseEntity<SubscriptionOfferResponse> create(@RequestHeader("Authorization") String authorization, @RequestBody SubscriptionOfferRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new CreateSubscriptionOfferCommand(actor.email(), actor.roles(), request.name(), request.price(), request.includedMinutes()));
+        var view = createSubscriptionOfferUseCase.execute(subscriptionOfferApiMapper.toCreateSubscriptionOfferCommand(actor.email(), actor.roles(), request));
         return ResponseEntity.ok(new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status()));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<SubscriptionOfferResponse> update(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id, @RequestBody SubscriptionOfferRequest request) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new UpdateSubscriptionOfferCommand(actor.email(), actor.roles(), id, request.name(), request.price(), request.includedMinutes()));
+        var view = updateSubscriptionOfferUseCase.execute(subscriptionOfferApiMapper.toUpdateSubscriptionOfferCommand(actor.email(), actor.roles(), id, request));
         return ResponseEntity.ok(new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status()));
     }
 
     @PutMapping("/{id}/activate")
     public ResponseEntity<SubscriptionOfferResponse> activate(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new ActivateSubscriptionOfferCommand(actor.email(), actor.roles(), id));
+        var view = activateSubscriptionOfferUseCase.execute(subscriptionOfferApiMapper.toActivateSubscriptionOfferCommand(actor.email(), actor.roles(), id));
         return ResponseEntity.ok(new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status()));
     }
 
     @PutMapping("/{id}/deactivate")
     public ResponseEntity<SubscriptionOfferResponse> deactivate(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        var view = service.execute(new DeactivateSubscriptionOfferCommand(actor.email(), actor.roles(), id));
+        var view = deactivateSubscriptionOfferUseCase.execute(subscriptionOfferApiMapper.toDeactivateSubscriptionOfferCommand(actor.email(), actor.roles(), id));
         return ResponseEntity.ok(new SubscriptionOfferResponse(view.offerId(), view.name(), view.price(), view.includedMinutes(), view.status()));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
         var actor = ApiSupport.actor(authorization, tokenReader);
-        service.execute(new DeleteSubscriptionOfferCommand(actor.email(), actor.roles(), id));
+        deleteSubscriptionOfferUseCase.execute(subscriptionOfferApiMapper.toDeleteSubscriptionOfferCommand(actor.email(), actor.roles(), id));
         return ResponseEntity.noContent().build();
     }
+
 }
 

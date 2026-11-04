@@ -13,4 +13,5 @@ public record CustomerDebtView(
         LocalDateTime createdAt,
         LocalDateTime settledAt
 ) {
+
 }

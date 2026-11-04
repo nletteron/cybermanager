@@ -70,13 +70,13 @@ Transformer un client journalier en abonne depuis sa session active et pouvoir d
 - consultation ulterieure depuis la fiche client
 
 ### Composants
-- convert-to-subscriber-form
 - subscription-offer-selector
 - conversion-summary-panel
 - customer-details-panel
 
 ### Navigation et comportements UI
-- le formulaire de conversion est accessible depuis la colonne de gauche de l'ecran sessions
+- l'ecran sessions ne propose plus de bouton `Convertir` ni de formulaire de conversion dans sa colonne de gauche
+- depuis les sessions, le parcours disponible est la vente d'un abonnement dans le detail du client ; l'API de conversion reste disponible pour les consommateurs qui en ont besoin
 - les offres d'abonnement sont chargees avant validation
 - apres conversion, la session recharge les informations client avec le nouveau type
 - le client converti apparait ensuite dans l'ecran client avec son abonnement en cours
@@ -90,5 +90,6 @@ Transformer un client journalier en abonne depuis sa session active et pouvoir d
 - l'abonnement choisi est vendu au moment de la conversion
 - le temps de session peut etre deduit du nouveau forfait si demande
 - l'historique du client est conserve
+- le commentaire rattache au client est conserve lors de sa conversion
 - le client converti devient consultable dans l'ecran client
 - la conversion reste faisable sans quitter le flux comptoir

@@ -34,6 +34,9 @@ Permettre la consultation, la recherche, la creation et la mise a jour des clien
 - la liste des clients doit permettre de distinguer les `Client` et les `Abonne`
 - les abonnements du client sont cumulables
 - les dates et heures visibles dans la fiche client suivent le format `JJ/MM/AAAA HH:mm`
+- un commentaire facultatif de 2000 caracteres maximum est rattache au client, et non a une session
+- le commentaire est normalise avant sauvegarde ; une saisie vide ou uniquement composee d'espaces efface le commentaire
+- le commentaire est conserve lors des changements de nom, achats d'abonnement, conversions et consommations de credit, et reste disponible pour les futures sessions du client
 
 ## Backend
 
@@ -55,6 +58,9 @@ Permettre la consultation, la recherche, la creation et la mise a jour des clien
 - SearchCustomersUseCase
 - GetCustomerDetailsUseCase
 - UpdateCustomerUseCase
+- GetCustomerCommentUseCase
+- UpdateCustomerCommentUseCase
+- CustomerCommentView
 - CustomerView
 - CustomerDetailsView
 
@@ -69,6 +75,14 @@ Permettre la consultation, la recherche, la creation et la mise a jour des clien
 - GET /api/customers/{id}
 - POST /api/customers
 - PUT /api/customers/{id}
+- GET /api/customers/{id}/comment : lecture authentifiee du commentaire client
+- PATCH /api/customers/{id}/comment : enregistrement authentifie de `{ "comment": "..." }`, ou `null` pour effacer
+
+### Persistance du commentaire
+
+- colonne nullable `cybermanager.cm_customers.comment`, de type `VARCHAR(2000)`
+- migration externe `configuration/backends/cybermanager/db/migration/V6__add_customer_comment.sql`, sans donnees initiales
+- les modes Hibernate et Flyway utilisent le meme mapping ; les donnees existantes restent intactes et leur commentaire est absent tant qu'il n'est pas saisi
 
 ## Frontend
 
@@ -100,6 +114,8 @@ Permettre la consultation, la recherche, la creation et la mise a jour des clien
 - la fiche client rappelle que les abonnements se cumulent
 - le resume du detail signale l'existence de dettes par une icone rouge de non-paiement, sans repeter toute la liste a droite
 - la fiche detaillee reutilise le meme panneau que la creation et l'edition
+- depuis le detail d'une session, une troisieme colonne permet de consulter, modifier et enregistrer le commentaire de sa fiche client
+- l'enregistrement affiche une confirmation ; une erreur de chargement interdit d'ecraser silencieusement un commentaire, et une erreur de sauvegarde conserve la saisie
 
 ## Criteres d'acceptation
 
@@ -108,3 +124,5 @@ Permettre la consultation, la recherche, la creation et la mise a jour des clien
 - la fiche client affiche l'abonnement en cours
 - la fiche client affiche les achats de produits, d'abonnements et autres ventes
 - la fiche client affiche les dettes non reglees en rouge
+- le commentaire retrouve apres reouverture du detail est celui du client selectionne, y compris dans une autre session
+- enregistrer ou effacer le commentaire ne modifie ni le credit ni le type du client

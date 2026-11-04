@@ -12,7 +12,7 @@ export const httpLoggingInterceptor: HttpInterceptorFn = (req, next) => {
     method: req.method,
     url: req.urlWithParams,
     responseType: req.responseType,
-    body: req.body,
+    body: sanitizeBody(req.body),
   });
 
   return next(req).pipe(
@@ -36,7 +36,7 @@ export const httpLoggingInterceptor: HttpInterceptorFn = (req, next) => {
         status: error.status,
         durationMs: Math.round(performance.now() - startedAt),
         message: error.message,
-        error: error.error,
+        error: sanitizeBody(error.error),
       });
       return throwError(() => error);
     }),
@@ -56,4 +56,25 @@ function summarizeBody(body: unknown): unknown {
   }
 
   return body;
+}
+
+function sanitizeBody(body: unknown): unknown {
+  if (!body || typeof body !== 'object' || body instanceof Blob || body instanceof FormData) {
+    return body;
+  }
+
+  if (Array.isArray(body)) {
+    return body.map((item) => sanitizeBody(item));
+  }
+
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).map(([key, value]) => [
+      key,
+      isSensitiveKey(key) ? '[redacted]' : sanitizeBody(value),
+    ]),
+  );
+}
+
+function isSensitiveKey(key: string): boolean {
+  return /password|token|authorization|secret/i.test(key);
 }

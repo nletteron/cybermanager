@@ -1,0 +1,33 @@
+.products-page .filters-grid {
+  grid-template-columns: repeat(4, max-content);
+}
+
+.products-page .filters-grid cm-input,
+.products-page .filters-grid cm-select {
+  width: auto;
+  min-width: 10.5rem;
+  max-width: 13rem;
+}
+
+.products-page textarea {
+  resize: vertical;
+  min-height: 5.2rem;
+}
+
+.description-cell {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 1000px) {
+  .products-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .products-page .filters-grid cm-input,
+  .products-page .filters-grid cm-select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

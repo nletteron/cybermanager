@@ -13,5 +13,6 @@ public record UpdateUserRequest(
         String password,
         @NotEmpty Set<String> roles
 ) {
+
 }
 

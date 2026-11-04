@@ -24,4 +24,5 @@ public record SessionView(
         BigDecimal totalAmountDue,
         BigDecimal totalPaidAmount
 ) {
+
 }

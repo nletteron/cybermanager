@@ -36,6 +36,8 @@ Permettre l'authentification d'un utilisateur via login / mot de passe et la rec
 - un utilisateur desactive ne peut pas ouvrir de session
 - les roles applicatifs sont charges au moment de l'authentification
 - une tentative d'authentification invalide retourne une erreur metier explicite
+- en mode Flyway, un administrateur initial actif est cree pour permettre la premiere authentification
+- cet administrateur porte uniquement le role `ADMIN`
 
 ## Backend
 
@@ -82,6 +84,13 @@ Permettre l'authentification d'un utilisateur via login / mot de passe et la rec
 ### Composants
 - login-form
 - authentication-error-banner
+- `cm-input` pour les champs standardises email et mot de passe
+- `cm-button` pour l'action de connexion
+
+### Design system frontend
+- le formulaire de login consomme les composants partages `cm-input` et `cm-button`
+- les champs restent compatibles avec les formulaires reactifs Angular via `formControlName`
+- les styles de controles sont herites du design system global plutot que redefinis localement
 
 ### Appels API
 - POST /api/auth/login
@@ -91,8 +100,11 @@ Permettre l'authentification d'un utilisateur via login / mot de passe et la rec
 - l'utilisateur non authentifie ne peut pas acceder aux ecrans proteges
 - l'utilisateur authentifie ne doit plus rester sur l'ecran de login
 - un message d'erreur lisible est affiche si l'authentification echoue
-- la session stocke le jeton et le profil courant pour les ecrans suivants
-- le profil courant est recharge au demarrage de l'application si un jeton est deja stocke
+- la session conserve le jeton et le profil courant uniquement en memoire pour les ecrans du chargement courant
+- aucun jeton ni profil utilisateur n'est ecrit dans `localStorage` ou `sessionStorage`
+- un rechargement du frontend vide la session et renvoie vers la page de connexion
+- un JWT emis avant le demarrage courant des serveurs est refuse afin de vider les sessions encore ouvertes apres redemarrage
+- aucun profil courant n'est recharge depuis un cache navigateur au demarrage
 - toute reponse `401` invalide la session locale et renvoie vers l'ecran de connexion
 - le frontend peut lire une configuration runtime des URLs d'API, avec fallback local `localhost` pour l'auth et le backend metier
 

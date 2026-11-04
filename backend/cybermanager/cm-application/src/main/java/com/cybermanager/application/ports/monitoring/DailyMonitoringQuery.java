@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface DailyMonitoringQuery {
+
     List<DailyCustomerView> getDailyCustomers();
+
     DailyCustomerActivityView getDailyCustomerActivity(UUID customerId);
+
 }

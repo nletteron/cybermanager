@@ -13,4 +13,5 @@ public record CustomerDetailsView(
         List<CustomerSaleView> purchases,
         List<CustomerDebtView> debts
 ) {
+
 }

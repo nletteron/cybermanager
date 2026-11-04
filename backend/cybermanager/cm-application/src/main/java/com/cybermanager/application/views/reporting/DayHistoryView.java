@@ -5,4 +5,5 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record DayHistoryView(LocalDate startDate, LocalDate endDate, List<DayCustomerHistoryView> customers, BigDecimal totalCollected, BigDecimal totalDebtCreated) {
+
 }

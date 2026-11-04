@@ -1,0 +1,23 @@
+.subscription-offers-page .filters-grid {
+  grid-template-columns: repeat(3, max-content);
+}
+
+.subscription-offers-page .filters-grid cm-input,
+.subscription-offers-page .filters-grid cm-select {
+  width: auto;
+  min-width: 9.5rem;
+  max-width: 12rem;
+}
+
+@media (max-width: 1000px) {
+  .subscription-offers-page .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-offers-page .filters-grid cm-input,
+  .subscription-offers-page .filters-grid cm-select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}

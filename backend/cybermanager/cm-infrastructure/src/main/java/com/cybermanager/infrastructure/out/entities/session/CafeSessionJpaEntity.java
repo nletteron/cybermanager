@@ -1,0 +1,38 @@
+package com.cybermanager.infrastructure.out.entities.session;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(
+        name = "cm_sessions",
+        indexes = {
+                @Index(name = "idx_cm_sessions_customer_started_at", columnList = "customerId, startedAt"),
+                @Index(name = "idx_cm_sessions_customer_ended_at", columnList = "customerId, endedAt"),
+                @Index(name = "idx_cm_sessions_paid", columnList = "paid")
+        }
+)
+public class CafeSessionJpaEntity {
+
+    @Id
+    public UUID id;
+    public UUID customerId;
+    public String workstation;
+    public LocalDateTime startedAt;
+    public LocalDateTime endedAt;
+    public LocalDateTime pausedAt;
+    public Boolean paid;
+    public Integer pausedMinutes;
+    public Integer pausedSeconds;
+    public Integer consumedMinutes;
+    public Integer consumedSeconds;
+    public BigDecimal calculatedPrice;
+
+}
+

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend TU"
+  short_description: "Tests backend DDD complets"
+  default_prompt: "Ajoute ou enrichis les TU/TI backend selon les couches DDD, en couvrant out.adapters.persistences.repositories, out.entities et out.adapters.persistences."

@@ -11,5 +11,6 @@ public record UserDetailsView(
         Set<String> roles,
         String status
 ) {
+
 }
 

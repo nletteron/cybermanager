@@ -7,6 +7,14 @@ export interface AuthenticationResponse {
   roles: string[];
 }
 
+export interface CurrentUserResponse {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+}
+
 export interface LoginPayload {
   email: string;
   password: string;

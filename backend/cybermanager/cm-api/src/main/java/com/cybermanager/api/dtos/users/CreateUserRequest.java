@@ -13,5 +13,6 @@ public record CreateUserRequest(
         @NotBlank String password,
         @NotEmpty Set<String> roles
 ) {
+
 }
 
