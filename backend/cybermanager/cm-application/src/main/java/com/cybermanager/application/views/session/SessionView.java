@@ -1,0 +1,27 @@
+package com.cybermanager.application.views.session;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public record SessionView(
+        UUID sessionId,
+        UUID customerId,
+        String customerName,
+        String customerType,
+        int remainingMinutes,
+        int displayRemainingMinutes,
+        String workstation,
+        LocalDateTime startedAt,
+        LocalDateTime endedAt,
+        boolean paused,
+        boolean paid,
+        int consumedSeconds,
+        int consumedMinutes,
+        BigDecimal calculatedPrice,
+        BigDecimal purchasesAmount,
+        BigDecimal openDebtAmount,
+        BigDecimal totalAmountDue,
+        BigDecimal totalPaidAmount
+) {
+}
