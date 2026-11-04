@@ -1,35 +1,17 @@
 package com.cybermanager.api.controllers.users;
 
+import com.cybermanager.api.abstracts.ApiSupport;
 import com.cybermanager.api.dtos.users.CreateUserRequest;
 import com.cybermanager.api.dtos.users.UpdateUserRequest;
 import com.cybermanager.api.dtos.users.UserResponse;
 import com.cybermanager.api.mappers.users.UserApiMapper;
-import com.cybermanager.application.commands.users.ChangeUserStatusCommand;
-import com.cybermanager.application.commands.users.CreateUserCommand;
-import com.cybermanager.application.commands.users.DeleteUserCommand;
-import com.cybermanager.application.commands.users.UpdateUserCommand;
-import com.cybermanager.application.queries.users.GetUserDetailsQuery;
-import com.cybermanager.application.queries.users.SearchUsersQuery;
-import com.cybermanager.application.usecases.users.CreateUserUseCase;
-import com.cybermanager.application.usecases.users.DisableUserUseCase;
-import com.cybermanager.application.usecases.users.DeleteUserUseCase;
-import com.cybermanager.application.usecases.users.EnableUserUseCase;
-import com.cybermanager.application.usecases.users.GetUserDetailsUseCase;
-import com.cybermanager.application.usecases.users.SearchUsersUseCase;
-import com.cybermanager.application.usecases.users.UpdateUserUseCase;
-import com.cybermanager.infrastructure.security.users.JwtAccessTokenReader;
+import com.cybermanager.application.usecases.users.*;
+import com.cybermanager.domain.queries.users.GetUserDetailsQuery;
+import com.cybermanager.domain.queries.users.SearchUsersQuery;
+import com.cybermanager.infrastructure.out.adapters.security.users.JwtAccessTokenReader;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
     private final SearchUsersUseCase searchUsersUseCase;
     private final GetUserDetailsUseCase getUserDetailsUseCase;
     private final CreateUserUseCase createUserUseCase;
@@ -75,7 +58,7 @@ public class UserController {
             @RequestParam(name = "term", required = false) String term,
             @RequestParam(name = "status", required = false) String status
     ) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         var result = searchUsersUseCase.execute(new SearchUsersQuery(actor.email(), actor.roles(), term, status))
                 .stream()
                 .map(userApiMapper::toResponse)
@@ -88,7 +71,7 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @PathVariable("id") UUID id
     ) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         return ResponseEntity.ok(userApiMapper.toResponse(
                 getUserDetailsUseCase.execute(new GetUserDetailsQuery(actor.email(), actor.roles(), id))
         ));
@@ -99,17 +82,9 @@ public class UserController {
             @RequestHeader("Authorization") String authorization,
             @Valid @RequestBody CreateUserRequest request
     ) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         return ResponseEntity.ok(userApiMapper.toResponse(
-                createUserUseCase.execute(new CreateUserCommand(
-                        actor.email(),
-                        actor.roles(),
-                        request.email(),
-                        request.firstName(),
-                        request.lastName(),
-                        request.password(),
-                        request.roles()
-                ))
+                createUserUseCase.execute(userApiMapper.toCreateUserCommand(actor.email(), actor.roles(), request))
         ));
     }
 
@@ -119,49 +94,36 @@ public class UserController {
             @PathVariable("id") UUID id,
             @Valid @RequestBody UpdateUserRequest request
     ) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         return ResponseEntity.ok(userApiMapper.toResponse(
-                updateUserUseCase.execute(new UpdateUserCommand(
-                        actor.email(),
-                        actor.roles(),
-                        id,
-                        request.email(),
-                        request.firstName(),
-                        request.lastName(),
-                        request.password(),
-                        request.roles()
-                ))
+                updateUserUseCase.execute(userApiMapper.toUpdateUserCommand(actor.email(), actor.roles(), id, request))
         ));
     }
 
     @PutMapping("/{id}/enable")
     public ResponseEntity<UserResponse> enable(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         return ResponseEntity.ok(userApiMapper.toResponse(
-                enableUserUseCase.execute(new ChangeUserStatusCommand(actor.email(), actor.roles(), id))
+                enableUserUseCase.execute(userApiMapper.toChangeUserStatusCommand(actor.email(), actor.roles(), id))
         ));
     }
 
     @PutMapping("/{id}/disable")
     public ResponseEntity<UserResponse> disable(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
         return ResponseEntity.ok(userApiMapper.toResponse(
-                disableUserUseCase.execute(new ChangeUserStatusCommand(actor.email(), actor.roles(), id))
+                disableUserUseCase.execute(userApiMapper.toChangeUserStatusCommand(actor.email(), actor.roles(), id))
         ));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@RequestHeader("Authorization") String authorization, @PathVariable("id") UUID id) {
-        var actor = jwtAccessTokenReader.read(extractToken(authorization));
-        deleteUserUseCase.execute(new DeleteUserCommand(actor.email(), actor.roles(), id));
+        var actor = ApiSupport.actor(authorization, jwtAccessTokenReader);
+        deleteUserUseCase.execute(userApiMapper.toDeleteUserCommand(actor.email(), actor.roles(), id));
         return ResponseEntity.noContent().build();
     }
 
-    private String extractToken(String authorization) {
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Missing bearer token");
-        }
-        return authorization.substring(7);
-    }
 }
+
+
 

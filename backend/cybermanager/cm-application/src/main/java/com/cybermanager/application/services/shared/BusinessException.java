@@ -1,20 +1,23 @@
 package com.cybermanager.application.services.shared;
 
-public class BusinessException extends RuntimeException {
-    private final BusinessErrorType type;
-    private final String code;
+import com.cybermanager.domain.exceptions.BusinessErrorCode;
+import com.cybermanager.domain.exceptions.BusinessErrorType;
+import com.cybermanager.domain.exceptions.DomainException;
 
-    public BusinessException(BusinessErrorType type, String code, String message) {
-        super(message);
-        this.type = type;
-        this.code = code;
+import java.io.Serial;
+import java.util.Map;
+
+public class BusinessException extends DomainException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public BusinessException(BusinessErrorType type, BusinessErrorCode code, String message) {
+        super(type, code, message);
     }
 
-    public BusinessErrorType type() {
-        return type;
+    public BusinessException(BusinessErrorType type, BusinessErrorCode code, String message, Map<String, Object> parameters) {
+        super(type, code, message, parameters);
     }
 
-    public String code() {
-        return code;
-    }
 }

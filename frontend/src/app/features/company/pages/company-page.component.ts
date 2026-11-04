@@ -81,17 +81,19 @@ export class CompanyPageComponent {
     this.error.set('');
     this.success.set('');
     const raw = this.form.getRawValue();
-    this.api.save({
+    const payload = {
       legalName: raw.legalName.trim(),
-      siret: raw.siret.trim(),
-      phone: raw.phone.trim(),
-      email: raw.email.trim(),
-      addressLine1: raw.addressLine1.trim(),
-      addressLine2: raw.addressLine2.trim(),
-      postalCode: raw.postalCode.trim(),
-      city: raw.city.trim(),
-      country: raw.country.trim(),
-    }).subscribe({
+      siret: this.optionalText(raw.siret),
+      phone: this.optionalText(raw.phone),
+      email: this.optionalText(raw.email),
+      addressLine1: this.optionalText(raw.addressLine1),
+      addressLine2: this.optionalText(raw.addressLine2),
+      postalCode: this.optionalText(raw.postalCode),
+      city: this.optionalText(raw.city),
+      country: this.optionalText(raw.country),
+    };
+    const request = this.hasCompany() ? this.api.update(payload) : this.api.create(payload);
+    request.subscribe({
       next: (company) => {
         this.hasCompany.set(true);
         this.editing.set(false);
@@ -139,5 +141,10 @@ export class CompanyPageComponent {
       return error.error.message;
     }
     return fallback;
+  }
+
+  private optionalText(value: string): string | null {
+    const normalized = value.trim();
+    return normalized ? normalized : null;
   }
 }

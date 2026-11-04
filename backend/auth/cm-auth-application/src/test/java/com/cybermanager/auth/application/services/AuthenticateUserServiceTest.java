@@ -1,15 +1,12 @@
 package com.cybermanager.auth.application.services;
 
-import com.cybermanager.auth.application.commands.AuthenticateUserCommand;
 import com.cybermanager.auth.application.ports.PasswordVerifier;
 import com.cybermanager.auth.application.ports.TokenIssuer;
-import com.cybermanager.auth.domain.model.AppRole;
-import com.cybermanager.auth.domain.model.EmailAddress;
-import com.cybermanager.auth.domain.model.PasswordHash;
-import com.cybermanager.auth.domain.model.UserAccount;
-import com.cybermanager.auth.domain.model.UserId;
-import com.cybermanager.auth.domain.model.UserStatus;
-import com.cybermanager.auth.domain.port.UserAuthenticationRepository;
+import com.cybermanager.auth.application.usecases.AuthenticateUserUseCase;
+import com.cybermanager.auth.domain.businessobjects.UserAccount;
+import com.cybermanager.auth.domain.commands.AuthenticateUserCommand;
+import com.cybermanager.auth.domain.ports.UserAuthenticationRepository;
+import com.cybermanager.auth.domain.valueobjects.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -22,13 +19,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class AuthenticateUserServiceTest {
+class AuthenticateUserUseCaseTest {
+
     @Test
     void shouldAuthenticateActiveUser() {
         UserAuthenticationRepository repository = mock(UserAuthenticationRepository.class);
         PasswordVerifier passwordVerifier = mock(PasswordVerifier.class);
         TokenIssuer tokenIssuer = mock(TokenIssuer.class);
-        AuthenticateUserService service = new AuthenticateUserService(repository, passwordVerifier, tokenIssuer);
+        AuthenticateUserUseCase useCase = new AuthenticateUserUseCase(repository, passwordVerifier, tokenIssuer);
 
         UserAccount user = new UserAccount(
                 new UserId(UUID.randomUUID()),
@@ -44,7 +42,7 @@ class AuthenticateUserServiceTest {
         when(passwordVerifier.matches("admin123", "hash")).thenReturn(true);
         when(tokenIssuer.issue(user)).thenReturn("jwt-token");
 
-        var result = service.execute(new AuthenticateUserCommand("admin@cybermanager.local", "admin123"));
+        var result = useCase.execute(new AuthenticateUserCommand("admin@cybermanager.local", "admin123"));
 
         assertEquals("jwt-token", result.token());
         assertEquals("admin@cybermanager.local", result.email());
@@ -52,10 +50,11 @@ class AuthenticateUserServiceTest {
 
     @Test
     void shouldRejectDisabledUser() {
+
         UserAuthenticationRepository repository = mock(UserAuthenticationRepository.class);
         PasswordVerifier passwordVerifier = mock(PasswordVerifier.class);
         TokenIssuer tokenIssuer = mock(TokenIssuer.class);
-        AuthenticateUserService service = new AuthenticateUserService(repository, passwordVerifier, tokenIssuer);
+        AuthenticateUserUseCase useCase = new AuthenticateUserUseCase(repository, passwordVerifier, tokenIssuer);
 
         UserAccount user = new UserAccount(
                 new UserId(UUID.randomUUID()),
@@ -71,8 +70,10 @@ class AuthenticateUserServiceTest {
 
         assertThrows(
                 AuthenticationFailedException.class,
-                () -> service.execute(new AuthenticateUserCommand("disabled@cybermanager.local", "pwd"))
+                () -> useCase.execute(new AuthenticateUserCommand("disabled@cybermanager.local", "pwd"))
         );
+
     }
+
 }
 

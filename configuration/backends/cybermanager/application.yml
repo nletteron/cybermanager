@@ -1,0 +1,5 @@
+spring:
+  config:
+    import: application-common.yml
+  profiles:
+    active: ${CM_DB_MODE:hibernate}

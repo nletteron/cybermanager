@@ -1,51 +1,42 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 import { guestGuard } from './core/guards/guest.guard';
-import { AppShellComponent } from './layout/app-shell.component';
-import { LoginPageComponent } from './features/auth/pages/login-page.component';
-import { UsersPageComponent } from './features/users/pages/users-page.component';
-import { ProductsPageComponent } from './features/products/pages/products-page.component';
-import { SubscriptionOffersPageComponent } from './features/subscriptions/pages/subscription-offers-page.component';
-import { CustomersPageComponent } from './features/customers/pages/customers-page.component';
-import { SalesPageComponent } from './features/sales/pages/sales-page.component';
-import { ConnectionPricingPageComponent } from './features/sales/pages/connection-pricing-page.component';
-import { SessionsPageComponent } from './features/sessions/pages/sessions-page.component';
-import { SessionDisplaySettingsPageComponent } from './features/sessions/pages/session-display-settings-page.component';
-import { MonitoringPageComponent } from './features/monitoring/pages/monitoring-page.component';
-import { ReportingPageComponent } from './features/reporting/pages/reporting-page.component';
-import { DebtsPageComponent } from './features/debts/pages/debts-page.component';
-import { ArchivingPageComponent } from './features/archiving/pages/archiving-page.component';
-import { InvoicesPageComponent } from './features/invoices/pages/invoices-page.component';
-import { CompanyPageComponent } from './features/company/pages/company-page.component';
 
 export const routes: Routes = [
   {
     path: 'login',
-    component: LoginPageComponent,
+    loadComponent: () => import('./features/auth/pages/login-page.component').then((module) => module.LoginPageComponent),
     canActivate: [guestGuard],
   },
   {
     path: '',
-    component: AppShellComponent,
+    loadComponent: () => import('./layout/app-shell.component').then((module) => module.AppShellComponent),
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', component: MonitoringPageComponent },
-      { path: 'users', component: UsersPageComponent },
-      { path: 'products', component: ProductsPageComponent },
-      { path: 'subscription-offers', component: SubscriptionOffersPageComponent },
-      { path: 'customers', component: CustomersPageComponent },
-      { path: 'sales', component: SalesPageComponent },
-      { path: 'sales/pricing', component: ConnectionPricingPageComponent },
-      { path: 'sessions', component: SessionsPageComponent },
-      { path: 'sessions/settings', component: SessionDisplaySettingsPageComponent },
-      { path: 'debts', component: DebtsPageComponent },
-      { path: 'archiving', component: ArchivingPageComponent },
-      { path: 'invoices', component: InvoicesPageComponent },
-      { path: 'company', component: CompanyPageComponent },
+      { path: 'dashboard', loadComponent: () => import('./features/monitoring/pages/monitoring-page.component').then((module) => module.MonitoringPageComponent) },
+      { path: 'users', loadComponent: () => import('./features/users/pages/users-page.component').then((module) => module.UsersPageComponent) },
+      { path: 'products', loadComponent: () => import('./features/products/pages/products-page.component').then((module) => module.ProductsPageComponent) },
+      { path: 'categories', loadComponent: () => import('./features/categories/pages/categories-page.component').then((module) => module.CategoriesPageComponent) },
+      { path: 'subscription-offers', loadComponent: () => import('./features/subscriptions/pages/subscription-offers-page.component').then((module) => module.SubscriptionOffersPageComponent) },
+      { path: 'customers', loadComponent: () => import('./features/customers/pages/customers-page.component').then((module) => module.CustomersPageComponent) },
+      { path: 'sales', loadComponent: () => import('./features/sales/pages/sales-page.component').then((module) => module.SalesPageComponent) },
+      { path: 'sales/pricing', loadComponent: () => import('./features/sales/pages/connection-pricing-page.component').then((module) => module.ConnectionPricingPageComponent) },
+      { path: 'sessions', loadComponent: () => import('./features/sessions/pages/sessions-page.component').then((module) => module.SessionsPageComponent) },
+      { path: 'sessions/settings', loadComponent: () => import('./features/sessions/pages/session-display-settings-page.component').then((module) => module.SessionDisplaySettingsPageComponent) },
+      { path: 'debts', loadComponent: () => import('./features/debts/pages/debts-page.component').then((module) => module.DebtsPageComponent) },
+      { path: 'archiving', loadComponent: () => import('./features/archiving/pages/archiving-page.component').then((module) => module.ArchivingPageComponent) },
+      { path: 'invoices', loadComponent: () => import('./features/invoices/pages/invoices-page.component').then((module) => module.InvoicesPageComponent) },
+      { path: 'company', loadComponent: () => import('./features/company/pages/company-page.component').then((module) => module.CompanyPageComponent) },
+      {
+        path: 'database-backups',
+        loadComponent: () => import('./features/database-backups/pages/database-backups-page.component').then((module) => module.DatabaseBackupsPageComponent),
+        canActivate: [adminGuard],
+      },
       { path: 'monitoring', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'reporting', component: ReportingPageComponent },
+      { path: 'reporting', loadComponent: () => import('./features/reporting/pages/reporting-page.component').then((module) => module.ReportingPageComponent) },
     ],
   },
   { path: '**', redirectTo: '' },

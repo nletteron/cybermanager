@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Coding Rules"
+  short_description: "Java backend spacing, formatting, and return rules"
+  default_prompt: "Use $backend-rules-coding when editing CyberManager backend Java code."

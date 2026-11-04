@@ -1,0 +1,38 @@
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: ${CM_DB_URL:jdbc:postgresql://localhost:5432/cybermanager}
+    username: ${CM_DB_USERNAME:cybermanager}
+    password: ${CM_DB_PASSWORD:cybermanager}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: cybermanager
+  servlet:
+    multipart:
+      max-file-size: ${CM_DATABASE_DUMP_MAX_SIZE:1GB}
+      max-request-size: ${CM_DATABASE_DUMP_MAX_SIZE:1GB}
+
+cybermanager:
+  security:
+    jwt-secret: ${CM_JWT_SECRET:01234567890123456789012345678901}
+  database-backup:
+    directory: ${CM_DATABASE_DUMP_DIR:/var/lib/postgresql/dumps}
+    docker-container: ${CM_DATABASE_BACKUP_CONTAINER:cybermanager-db}
+    docker-path: ${CM_DOCKER_PATH:docker}
+    pg-dump-path: ${CM_PG_DUMP_PATH:pg_dump}
+    pg-restore-path: ${CM_PG_RESTORE_PATH:pg_restore}
+  errors:
+    file: ${CM_ERROR_CATALOG_FILE:file:configuration/backends/cybermanager/error.json}
+    reload-delay-ms: ${CM_ERROR_CATALOG_RELOAD_DELAY_MS:5000}
+
+logging:
+  level:
+    com.cybermanager: ${CM_LOG_LEVEL:INFO}
+    com.cybermanager.api.configurations.ApiRequestLoggingFilter: ${CM_HTTP_LOG_LEVEL:DEBUG}

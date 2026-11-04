@@ -4,22 +4,17 @@ import com.cybermanager.auth.api.dtos.AuthenticationResponse;
 import com.cybermanager.auth.api.dtos.CurrentUserResponse;
 import com.cybermanager.auth.api.dtos.LoginRequest;
 import com.cybermanager.auth.api.mappers.AuthApiMapper;
-import com.cybermanager.auth.application.commands.AuthenticateUserCommand;
-import com.cybermanager.auth.application.queries.LoadCurrentUserQuery;
 import com.cybermanager.auth.application.usecases.AuthenticateUserUseCase;
 import com.cybermanager.auth.application.usecases.LoadCurrentUserUseCase;
+import com.cybermanager.auth.domain.queries.LoadCurrentUserQuery;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     private final AuthenticateUserUseCase authenticateUserUseCase;
     private final LoadCurrentUserUseCase loadCurrentUserUseCase;
     private final AuthApiMapper authApiMapper;
@@ -37,7 +32,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authApiMapper.toResponse(
-                authenticateUserUseCase.execute(new AuthenticateUserCommand(request.email(), request.password()))
+                authenticateUserUseCase.execute(authApiMapper.toAuthenticateUserCommand(request))
         ));
     }
 
@@ -54,5 +49,8 @@ public class AuthController {
         }
         return authorization.substring(7);
     }
+
 }
+
+
 

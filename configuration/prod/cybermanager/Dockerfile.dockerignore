@@ -1,0 +1,8 @@
+**
+!backend/
+!backend/**
+**/target/
+**/*.log
+**/.env
+**/.env.*
+**/*.env

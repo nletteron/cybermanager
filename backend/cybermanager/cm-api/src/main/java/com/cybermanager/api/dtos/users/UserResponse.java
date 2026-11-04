@@ -11,5 +11,6 @@ public record UserResponse(
         Set<String> roles,
         String status
 ) {
+
 }
 

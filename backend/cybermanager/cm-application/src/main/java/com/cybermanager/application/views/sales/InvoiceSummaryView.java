@@ -13,4 +13,5 @@ public record InvoiceSummaryView(
         String status,
         BigDecimal totalAmount
 ) {
+
 }

@@ -1,12 +1,15 @@
 package com.cybermanager.api.controllers.monitoring;
 
-import com.cybermanager.api.dtos.monitoring.MonitoringDtos.DayCustomerActivityResponse;
-import com.cybermanager.api.dtos.monitoring.MonitoringDtos.DayCustomerResponse;
-import com.cybermanager.api.dtos.monitoring.MonitoringDtos.SaleActivityResponse;
-import com.cybermanager.api.dtos.monitoring.MonitoringDtos.SessionActivityResponse;
+import com.cybermanager.api.dtos.monitoring.DayCustomerActivityResponse;
+import com.cybermanager.api.dtos.monitoring.DayCustomerResponse;
+import com.cybermanager.api.dtos.monitoring.SaleActivityResponse;
+import com.cybermanager.api.dtos.monitoring.SessionActivityResponse;
 import com.cybermanager.application.services.monitoring.MonitoringApplicationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/day-monitoring/customers")
 public class MonitoringController {
+
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final MonitoringApplicationService service;
@@ -70,5 +74,6 @@ public class MonitoringController {
     private String format(java.time.LocalDateTime value) {
         return value == null ? "-" : value.format(DATE_TIME_FORMATTER);
     }
+
 }
 

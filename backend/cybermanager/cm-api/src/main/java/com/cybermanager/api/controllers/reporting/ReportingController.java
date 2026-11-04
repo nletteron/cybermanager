@@ -1,9 +1,9 @@
 package com.cybermanager.api.controllers.reporting;
 
-import com.cybermanager.api.dtos.reporting.ReportingDtos.CustomerDayHistoryResponse;
-import com.cybermanager.api.dtos.reporting.ReportingDtos.DayCustomerHistoryResponse;
-import com.cybermanager.api.dtos.reporting.ReportingDtos.DayHistoryResponse;
-import com.cybermanager.api.dtos.reporting.ReportingDtos.SaleActivityResponse;
+import com.cybermanager.api.dtos.reporting.CustomerDayHistoryResponse;
+import com.cybermanager.api.dtos.reporting.DayCustomerHistoryResponse;
+import com.cybermanager.api.dtos.reporting.DayHistoryResponse;
+import com.cybermanager.api.dtos.reporting.SaleActivityResponse;
 import com.cybermanager.application.services.reporting.ReportingApplicationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +14,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/history/days")
 public class ReportingController {
+
     private final ReportingApplicationService service;
 
     public ReportingController(ReportingApplicationService service) {
@@ -64,5 +65,6 @@ public class ReportingController {
                 view.totalDebtCreated()
         ));
     }
+
 }
 

@@ -36,6 +36,8 @@ Permettre l'administration du referentiel des utilisateurs et de leurs roles.
 - un utilisateur possede au moins un role
 - un utilisateur desactive conserve son historique
 - seuls les administrateurs peuvent modifier les roles
+- les roles supportes sont `ADMIN` et `EMPLOYEE`
+- la migration Flyway initiale associe le role `ADMIN` au compte `admin@cybermanager.local`
 
 ## Backend
 
@@ -103,6 +105,14 @@ Permettre l'administration du referentiel des utilisateurs et de leurs roles.
 - user-form
 - role-selector
 - user-status-badge
+- `cm-button` pour les actions de creation, pagination, fermeture, sauvegarde, statut et suppression
+- `cm-input` pour les champs de recherche, email, prenom, nom et mot de passe
+- `cm-select` pour les filtres role, statut et taille de page
+
+### Design system frontend
+- l'ecran utilisateurs utilise les composants partages du design system pour standardiser boutons, inputs et selects
+- les composants de saisie restent compatibles avec les formulaires reactifs Angular via `formControlName`
+- les styles de filtres, panneaux, boutons et pagination heritent du socle global `styles.css`
 
 ### Navigation et comportements UI
 - la liste se charge a l'ouverture de l'ecran

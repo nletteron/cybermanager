@@ -12,7 +12,7 @@ import { Component, EventEmitter, Output, input } from '@angular/core';
       </label>
     </div>
   `,
-  styles: `.roles { display: flex; gap: 1rem; flex-wrap: wrap; } label { display: inline-flex; gap: 0.45rem; align-items: center; }`,
+  styleUrl: './role-selector.component.css',
 })
 export class RoleSelectorComponent {
   readonly selected = input<string[]>([]);

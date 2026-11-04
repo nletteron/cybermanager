@@ -1,0 +1,25 @@
+name: cybermanager
+
+services:
+  cybermanager-db:
+    image: cybermanager-db:dev
+    build:
+      context: ../database
+      dockerfile: ../prod/database/Dockerfile
+    container_name: cybermanager-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cybermanager
+      POSTGRES_USER: cybermanager
+      POSTGRES_PASSWORD: ${CM_DB_PASSWORD:-cybermanager}
+    ports:
+      - "127.0.0.1:${CM_DB_PORT:-5432}:5432"
+    volumes:
+      - cybermanager-postgres-data:/var/lib/postgresql/data
+      - type: bind
+        source: ${CM_DATABASE_DUMP_HOST_DIR:-./dumps}
+        target: /var/lib/postgresql/dumps
+
+volumes:
+  cybermanager-postgres-data:
+    name: ${CM_DB_VOLUME_NAME:-cybermanager_cybermanager-postgres-data}

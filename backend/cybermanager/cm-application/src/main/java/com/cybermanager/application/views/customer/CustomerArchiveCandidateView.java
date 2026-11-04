@@ -17,4 +17,5 @@ public record CustomerArchiveCandidateView(
         BigDecimal salesTotal,
         BigDecimal debtTotal
 ) {
+
 }

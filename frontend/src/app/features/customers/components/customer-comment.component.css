@@ -1,0 +1,2 @@
+:host { display: block; min-width: 0; }
+textarea { width: 100%; resize: vertical; min-height: 2.5rem; padding: .5rem; font: inherit; line-height: 1.4; }

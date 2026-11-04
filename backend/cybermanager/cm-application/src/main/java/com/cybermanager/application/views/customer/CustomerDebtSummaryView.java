@@ -11,4 +11,5 @@ public record CustomerDebtSummaryView(
         BigDecimal totalOpenDebt,
         List<CustomerDebtView> debts
 ) {
+
 }

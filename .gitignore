@@ -26,3 +26,11 @@ target/
 dist/
 node_modules/
 /.idea/
+/data/dumps/
+/configuration/dev/dumps/*
+!/configuration/dev/dumps/.gitkeep
+/configuration/prod/dumps/
+/configuration/**/.env
+/configuration/**/.env.*
+!/configuration/**/.env.example
+/configuration/**/*.env

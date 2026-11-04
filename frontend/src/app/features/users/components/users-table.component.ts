@@ -35,18 +35,7 @@ import { UserStatusBadgeComponent } from './user-status-badge.component';
       </tbody>
     </table>
   `,
-  styles: `
-    .table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 1rem; overflow: hidden; table-layout: fixed; }
-    th, td { padding: 0.72rem 0.85rem; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
-    th { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
-    tbody tr { transition: background 160ms ease; }
-    tbody tr:hover, tbody tr.active { background: #fff7ed; }
-    strong { display: block; line-height: 1.2; }
-    .email { color: #64748b; font-size: 0.85rem; margin-top: 0.12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .roles { color: #334155; font-size: 0.9rem; }
-    .empty { text-align: center; color: #64748b; padding: 1rem; }
-    button { border: 0; border-radius: 999px; padding: 0.45rem 0.8rem; background: #fca311; color: #14213d; font-weight: 700; cursor: pointer; }
-  `,
+  styleUrl: './users-table.component.css',
 })
 export class UsersTableComponent {
   readonly users = input<UserResponse[]>([]);

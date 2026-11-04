@@ -10,5 +10,6 @@ public record CurrentUserView(
         String lastName,
         Set<String> roles
 ) {
+
 }
 

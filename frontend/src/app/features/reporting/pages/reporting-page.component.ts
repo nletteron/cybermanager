@@ -169,42 +169,7 @@ import { ReportingApiService } from '../services/reporting-api.service';
       </div>
     </section>
   `,
-  styles: `
-    .page,.stack{display:grid;gap:1rem}
-    .hero{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
-    .hero-actions{margin-top:.7rem;display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap}
-    .report-filters{grid-template-columns:repeat(5,max-content);justify-content:start;align-items:end}
-    .report-filters .field input,.report-filters .field select{width:auto;min-width:9.5rem;max-width:12rem;border-radius:999px;background:#fff;padding:.6rem .78rem !important}
-    .action-field{align-self:end}
-    .compact-button{padding:.56rem .82rem !important}
-    .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(19rem,.75fr);gap:1rem;align-items:start}
-    .panel,.stat-card{background:#fff;padding:1rem;border-radius:1rem}
-    .side-column{align-content:start}
-    .panel-head,.side-head{display:flex;align-items:center;justify-content:space-between;gap:1rem}
-    .panel-actions{display:flex;align-items:center;justify-content:flex-end;gap:.85rem;flex-wrap:wrap}
-    .pager{display:inline-flex;align-items:center;gap:.7rem}
-    .panel-head h3,.side-head h3,.hero h2{margin:0}
-    .stats{display:grid;grid-template-columns:1fr;gap:.75rem}
-    .stat-card span{display:block;color:#64748b;font-size:.8rem}
-    .stat-card strong{font-size:1.15rem}
-    .status-list{display:grid;gap:.55rem}
-    .status-item{display:grid;gap:.2rem;padding:.72rem .8rem;border:1px solid #e2e8f0;border-radius:.9rem;background:#f8fafc}
-    .status-head{display:flex;justify-content:space-between;gap:.75rem;align-items:center}
-    .status-item strong,.status-item small{margin:0}
-    .status-item small{color:#64748b}
-    .table{width:100%;border-collapse:collapse}
-    .table th,.table td{padding:.5rem .58rem;border-bottom:1px solid #e2e8f0;text-align:left;line-height:1.15}
-    .compact th,.compact td{padding:.42rem .5rem}
-    .detail-stats p,.muted,.error{margin:0}
-    .events{margin:0;padding-left:1rem;display:grid;gap:.35rem}
-    .error{color:#b91c1c}
-    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.4);display:grid;place-items:center;padding:1rem;z-index:40}
-    .detail-modal{width:min(56rem,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:1rem;padding:1rem;display:grid;gap:1rem}
-    @media(max-width:1000px){
-      .grid,.report-filters{grid-template-columns:1fr}
-      .report-filters .field input{width:100%;min-width:0;max-width:none}
-    }
-  `,
+  styleUrl: './reporting-page.component.css',
 })
 export class ReportingPageComponent {
   private readonly api = inject(ReportingApiService);

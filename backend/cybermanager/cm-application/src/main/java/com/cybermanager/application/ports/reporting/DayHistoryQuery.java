@@ -7,6 +7,9 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public interface DayHistoryQuery {
+
     DayHistoryView getDayHistory(LocalDate startDate, LocalDate endDate);
+
     CustomerDayHistoryView getCustomerDayHistory(LocalDate startDate, LocalDate endDate, UUID customerId);
+
 }

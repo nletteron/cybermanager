@@ -18,6 +18,7 @@ Utiliser cette skill lorsqu'une demande concerne :
 - la ou les features `documentations/features/F-XXX` impactees
 - les bugs `documentations/bugs/B-XXX` impactes si applicable
 - le diff Git ou les fichiers modifies
+- la skill `frontend-design-system` si le diff touche composants, pages ou CSS
 
 ## Steps
 
@@ -31,6 +32,7 @@ Utiliser cette skill lorsqu'une demande concerne :
     - modeles TypeScript explicites
     - pas de logique metier lourde dans les templates
     - composants/pages ranges dans la bonne feature
+    - structure de composants conforme a `frontend-design-system`
 
 3. Controler les interactions :
     - filtres, pagination, modales, drawers, drag and drop, toggles
@@ -46,6 +48,7 @@ Utiliser cette skill lorsqu'une demande concerne :
 5. Controler le CSS :
     - styles dedies quand le composant devient dense
     - pas de duplication inutile
+    - styles generiques alignes sur `frontend-design-system`
     - verifier le budget Angular `anyComponentStyle`
 
 6. Controler l'etat Git avant PR :

@@ -12,6 +12,7 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class ReportingApplicationService {
+
     private final DayHistoryQuery queryAdapter;
 
     public ReportingApplicationService(DayHistoryQuery queryAdapter) {
@@ -25,5 +26,6 @@ public class ReportingApplicationService {
     public CustomerDayHistoryView customerHistory(LocalDate startDate, LocalDate endDate, UUID customerId) {
         return queryAdapter.getCustomerDayHistory(startDate, endDate, customerId);
     }
+
 }
 

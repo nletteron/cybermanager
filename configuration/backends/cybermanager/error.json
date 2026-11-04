@@ -1,0 +1,486 @@
+{
+  "business": [
+    {
+      "domainCode": "ADMIN_ROLE_REQUIRED",
+      "code": "CM-BUS-0001",
+      "message": "Administrator role is required",
+      "httpStatus": 403,
+      "boundedContext": "users",
+      "active": true
+    },
+    {
+      "domainCode": "USER_ROLE_REQUIRED",
+      "code": "CM-BUS-0002",
+      "message": "At least one role is required",
+      "httpStatus": 400,
+      "boundedContext": "users",
+      "active": true
+    },
+    {
+      "domainCode": "USER_NOT_FOUND",
+      "code": "CM-BUS-0003",
+      "message": "User not found",
+      "httpStatus": 404,
+      "boundedContext": "users",
+      "active": true
+    },
+    {
+      "domainCode": "USER_EMAIL_EXISTS",
+      "code": "CM-BUS-0004",
+      "message": "Email already exists",
+      "httpStatus": 409,
+      "boundedContext": "users",
+      "active": true
+    },
+    {
+      "domainCode": "COMPANY_PROFILE_ALREADY_EXISTS",
+      "code": "CM-BUS-0005",
+      "message": "Company profile already exists",
+      "httpStatus": 409,
+      "boundedContext": "company",
+      "active": true
+    },
+    {
+      "domainCode": "COMPANY_PROFILE_NOT_FOUND",
+      "code": "CM-BUS-0006",
+      "message": "Company profile not found",
+      "httpStatus": 404,
+      "boundedContext": "company",
+      "active": true
+    },
+    {
+      "domainCode": "COMPANY_LEGAL_NAME_REQUIRED",
+      "code": "CM-BUS-0007",
+      "message": "Company legal name is required",
+      "httpStatus": 400,
+      "boundedContext": "company",
+      "active": true
+    },
+    {
+      "domainCode": "CUSTOMER_NOT_FOUND",
+      "code": "CM-BUS-0008",
+      "message": "Customer not found",
+      "httpStatus": 404,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "CUSTOMER_INACTIVE",
+      "code": "CM-BUS-0009",
+      "message": "Customer is not active",
+      "httpStatus": 403,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "SUBSCRIPTION_OFFER_REQUIRED",
+      "code": "CM-BUS-0010",
+      "message": "Subscription offer is required",
+      "httpStatus": 400,
+      "boundedContext": "subscription",
+      "active": true
+    },
+    {
+      "domainCode": "SUBSCRIPTION_OFFER_NOT_FOUND",
+      "code": "CM-BUS-0011",
+      "message": "Subscription offer not found",
+      "httpStatus": 404,
+      "boundedContext": "subscription",
+      "active": true
+    },
+    {
+      "domainCode": "SUBSCRIPTION_OFFERS_UNAVAILABLE",
+      "code": "CM-BUS-0012",
+      "message": "Subscription offers are unavailable",
+      "httpStatus": 400,
+      "boundedContext": "subscription",
+      "active": true
+    },
+    {
+      "domainCode": "PRODUCT_NOT_FOUND",
+      "code": "CM-BUS-0013",
+      "message": "Product not found",
+      "httpStatus": 404,
+      "boundedContext": "catalog",
+      "active": true
+    },
+    {
+      "domainCode": "SALE_NOT_FOUND",
+      "code": "CM-BUS-0014",
+      "message": "Sale not found",
+      "httpStatus": 404,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "SALE_ALREADY_IN_DEBT",
+      "code": "CM-BUS-0015",
+      "message": "Sale is already in debt",
+      "httpStatus": 409,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "SALE_NOT_SUBSCRIPTION",
+      "code": "CM-BUS-0016",
+      "message": "Only subscription sales can be deleted",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "SALE_SESSION_REQUIRED",
+      "code": "CM-BUS-0017",
+      "message": "Sale is not linked to a session",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "SALE_DELETE_FORBIDDEN",
+      "code": "CM-BUS-0018",
+      "message": "Subscription sale can only be deleted before payment",
+      "httpStatus": 409,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "DEBT_NOT_FOUND",
+      "code": "CM-BUS-0019",
+      "message": "Debt not found",
+      "httpStatus": 404,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "DEBT_ALREADY_SETTLED",
+      "code": "CM-BUS-0020",
+      "message": "Debt is already settled",
+      "httpStatus": 409,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "ARCHIVE_EXPORT_FAILED",
+      "code": "CM-BUS-0021",
+      "message": "Archive XLSX export failed",
+      "httpStatus": 409,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "DEBT_REPORT_EXPORT_FAILED",
+      "code": "CM-BUS-0022",
+      "message": "Debt report export failed",
+      "httpStatus": 409,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "ARCHIVE_PERIOD_REQUIRED",
+      "code": "CM-BUS-0023",
+      "message": "Archive period is required",
+      "httpStatus": 400,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "ARCHIVE_PERIOD_INVALID",
+      "code": "CM-BUS-0024",
+      "message": "Archive end date must be after start date",
+      "httpStatus": 400,
+      "boundedContext": "customer",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_NOT_FOUND",
+      "code": "CM-BUS-0025",
+      "message": "Session not found",
+      "httpStatus": 404,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_CUSTOMER_MISMATCH",
+      "code": "CM-BUS-0026",
+      "message": "Session does not belong to customer",
+      "httpStatus": 400,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_ALREADY_PAID",
+      "code": "CM-BUS-0027",
+      "message": "Session is already paid",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_NOT_STOPPED",
+      "code": "CM-BUS-0028",
+      "message": "Session must be stopped before payment",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_ALREADY_PAUSED",
+      "code": "CM-BUS-0029",
+      "message": "Session is already paused",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_NOT_PAUSED",
+      "code": "CM-BUS-0030",
+      "message": "Session is not paused",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_ALREADY_STOPPED",
+      "code": "CM-BUS-0031",
+      "message": "Session is already stopped",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_SUBSCRIBER_REQUIRED",
+      "code": "CM-BUS-0032",
+      "message": "Only subscribers can be searched and reused",
+      "httpStatus": 400,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_CUSTOMER_REQUIRED",
+      "code": "CM-BUS-0033",
+      "message": "Customer name or subscriber is required",
+      "httpStatus": 400,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "SESSION_ALREADY_EXISTS_FOR_CUSTOMER",
+      "code": "CM-BUS-0034",
+      "message": "Customer already has a current session",
+      "httpStatus": 409,
+      "boundedContext": "session",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_NOT_FOUND",
+      "code": "CM-BUS-0035",
+      "message": "Invoice not found",
+      "httpStatus": 404,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_ALREADY_CANCELLED",
+      "code": "CM-BUS-0036",
+      "message": "Invoice is already cancelled",
+      "httpStatus": 409,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_CUSTOMER_REQUIRED",
+      "code": "CM-BUS-0037",
+      "message": "Invoice customer is required",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_LINES_REQUIRED",
+      "code": "CM-BUS-0038",
+      "message": "At least one invoice line is required",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_LINE_LABEL_REQUIRED",
+      "code": "CM-BUS-0039",
+      "message": "Invoice line label is required",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_LINE_QUANTITY_INVALID",
+      "code": "CM-BUS-0040",
+      "message": "Invoice line quantity must be positive",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "INVOICE_LINE_PRICE_INVALID",
+      "code": "CM-BUS-0041",
+      "message": "Invoice line unit price is invalid",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "CONNECTION_PRICING_TIERS_REQUIRED",
+      "code": "CM-BUS-0042",
+      "message": "At least one connection pricing tier is required",
+      "httpStatus": 400,
+      "boundedContext": "sales",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_REQUIRED",
+      "code": "CM-BUS-0043",
+      "message": "Database dump file is required",
+      "httpStatus": 400,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_EMPTY",
+      "code": "CM-BUS-0044",
+      "message": "Database dump file is empty",
+      "httpStatus": 400,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_NAME_INVALID",
+      "code": "CM-BUS-0045",
+      "message": "Database dump file name is invalid",
+      "httpStatus": 400,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_NOT_FOUND",
+      "code": "CM-BUS-0046",
+      "message": "Database dump not found",
+      "httpStatus": 404,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_DIRECTORY_FAILED",
+      "code": "CM-BUS-0047",
+      "message": "Database dump directory cannot be created",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_LIST_FAILED",
+      "code": "CM-BUS-0048",
+      "message": "Database dumps cannot be listed",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_METADATA_FAILED",
+      "code": "CM-BUS-0049",
+      "message": "Database dump metadata cannot be read",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_READ_FAILED",
+      "code": "CM-BUS-0050",
+      "message": "Database dump cannot be read",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_DUMP_UPLOAD_FAILED",
+      "code": "CM-BUS-0051",
+      "message": "Database dump upload failed",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_EXPORT_FAILED",
+      "code": "CM-BUS-0052",
+      "message": "Database export failed",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "DATABASE_RESTORE_FAILED",
+      "code": "CM-BUS-0053",
+      "message": "Database restore failed",
+      "httpStatus": 409,
+      "boundedContext": "database",
+      "active": true
+    },
+    {
+      "domainCode": "CUSTOMER_COMMENT_TOO_LONG",
+      "code": "CM-BUS-0054",
+      "message": "Le commentaire client ne doit pas depasser 2000 caracteres",
+      "httpStatus": 400,
+      "boundedContext": "customer",
+      "active": true
+    }
+  ],
+  "technical": [
+    {
+      "domainCode": "BAD_REQUEST",
+      "code": "CM-TECH-0001",
+      "message": "Bad request",
+      "httpStatus": 400,
+      "boundedContext": "api",
+      "active": true
+    },
+    {
+      "domainCode": "INVALID_TOKEN",
+      "code": "CM-TECH-0002",
+      "message": "Invalid or expired token",
+      "httpStatus": 401,
+      "boundedContext": "api",
+      "active": true
+    },
+    {
+      "domainCode": "ROUTE_NOT_FOUND",
+      "code": "CM-TECH-0003",
+      "message": "Route not found",
+      "httpStatus": 404,
+      "boundedContext": "api",
+      "active": true
+    },
+    {
+      "domainCode": "METHOD_NOT_ALLOWED",
+      "code": "CM-TECH-0004",
+      "message": "HTTP method not allowed",
+      "httpStatus": 405,
+      "boundedContext": "api",
+      "active": true
+    },
+    {
+      "domainCode": "INTERNAL_ERROR",
+      "code": "CM-TECH-0005",
+      "message": "Unexpected server error",
+      "httpStatus": 500,
+      "boundedContext": "api",
+      "active": true
+    },
+    {
+      "domainCode": "ERROR_CATALOG_LOAD_FAILED",
+      "code": "CM-TECH-0006",
+      "message": "Error catalog cannot be loaded",
+      "httpStatus": 500,
+      "boundedContext": "infrastructure",
+      "active": true
+    }
+  ]
+}

@@ -16,4 +16,5 @@ public record CompanyProfileView(
         String country,
         LocalDateTime updatedAt
 ) {
+
 }

@@ -11,5 +11,6 @@ public record AuthenticationResultView(
         String lastName,
         Set<String> roles
 ) {
+
 }
 

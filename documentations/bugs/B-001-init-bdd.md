@@ -21,7 +21,7 @@ Le depot ne forcait pas les fins de ligne Unix pour les scripts d'initialisation
 ## Correctif applique
 
 - ajout d'un fichier [.gitattributes](/D:/DATA/cybermanager/.gitattributes) pour forcer `LF` sur `*.sh` et `*.sql`
-- durcissement de [00-init-database.sh](/D:/DATA/cybermanager/configuration/cybermanager/initdb/00-init-database.sh) pour nettoyer d'eventuels `\r` presents dans `POSTGRES_USER` et `POSTGRES_DB`
+- durcissement de [00-init-database.sh](/D:/DATA/cybermanager/configuration/database/initdb/00-init-database.sh) pour nettoyer d'eventuels `\r` presents dans `POSTGRES_USER` et `POSTGRES_DB`
 
 ## Prevention
 

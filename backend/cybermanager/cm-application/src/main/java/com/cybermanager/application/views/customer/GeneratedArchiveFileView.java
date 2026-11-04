@@ -10,4 +10,5 @@ public record GeneratedArchiveFileView(
         String generatedBy,
         LocalDateTime generatedAt
 ) {
+
 }

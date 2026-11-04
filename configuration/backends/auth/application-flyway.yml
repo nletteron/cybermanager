@@ -1,0 +1,14 @@
+spring:
+  config:
+    import: application-common.yml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: ${CM_FLYWAY_LOCATIONS}
+    fail-on-missing-locations: true
+    default-schema: cybermanager
+    schemas: cybermanager
+    table: flyway_auth_schema_history
+    baseline-on-migrate: false

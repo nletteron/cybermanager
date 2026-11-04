@@ -16,4 +16,12 @@ export class CompanyApiService {
   save(payload: CompanyProfilePayload) {
     return this.http.put<CompanyProfile>(this.baseUrl, payload);
   }
+
+  create(payload: CompanyProfilePayload) {
+    return this.http.post<CompanyProfile>(this.baseUrl, payload);
+  }
+
+  update(payload: CompanyProfilePayload) {
+    return this.http.put<CompanyProfile>(this.baseUrl, payload);
+  }
 }

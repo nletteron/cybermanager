@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { environment } from '../../../../environments/environment';
-import type { AuthenticationResponse, LoginPayload } from '../models/auth.models';
+import type { AuthenticationResponse, CurrentUserResponse, LoginPayload } from '../models/auth.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
@@ -14,6 +14,6 @@ export class AuthApiService {
   }
 
   me() {
-    return this.http.get<AuthenticationResponse>(`${this.baseUrl}/me`);
+    return this.http.get<CurrentUserResponse>(`${this.baseUrl}/me`);
   }
 }

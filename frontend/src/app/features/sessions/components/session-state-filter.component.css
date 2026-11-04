@@ -1,0 +1,8 @@
+:host { display: block; min-width: 0; }
+summary { padding: .65rem .8rem; min-height: 2.55rem; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; cursor: pointer; font-size: .88rem; }
+summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.state-menu { display: grid; gap: .5rem; padding-top: .6rem; }
+.state-menu input { width: 100%; min-width: 0; }
+.state-options { display: grid; gap: .15rem; max-height: 9rem; overflow: auto; }
+.state-options button { justify-content: flex-start; padding: .4rem .65rem; text-align: left; font-size: .8rem; }
+.state-options button[aria-pressed="true"] { background: #dbeafe; color: #1e40af; }

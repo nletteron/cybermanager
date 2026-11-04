@@ -85,6 +85,8 @@ Permettre de mettre en pause puis de reprendre une session active, sans la clotu
 - une session en pause est visuellement identifiable
 - la liste des sessions en cours conserve une hauteur stable meme quand peu de lignes sont affichees
 - la reprise d'une session remet a jour la ligne sans changer d'ecran
+- le filtre `Etat` du tableau permet d'isoler les sessions en `Pause` ; sa liste d'etats est recherchable
+- apres une pause ou une reprise, la ligne est immediatement reevaluee selon le filtre d'etat et le tri actifs ; une session reprise quitte donc une liste filtree sur `Pause`
 - les erreurs de pause ou de reprise restent visibles dans l'ecran
 
 ## Criteres d'acceptation
@@ -93,3 +95,4 @@ Permettre de mettre en pause puis de reprendre une session active, sans la clotu
 - un employe peut reprendre une session en pause
 - une session en pause reste visible dans les sessions en cours
 - le temps de pause n'est pas compte dans le temps facture ou deduit
+- un filtre sur `Pause` affiche seulement les sessions en pause et reste selectionne apres une reprise ou un rechargement de la liste

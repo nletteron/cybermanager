@@ -103,6 +103,14 @@ Permettre de definir des offres d'abonnement avec un prix et une duree de connex
 - subscription-offer-form
 - duration-display
 - offer-status-badge
+- `cm-button` pour les actions de creation, edition, pagination, fermeture, sauvegarde, statut et suppression
+- `cm-input` pour le filtre libelle, le nom, le prix et les minutes incluses
+- `cm-select` pour le statut et la taille de page
+
+### Design system frontend
+- l'ecran offres d'abonnement utilise les primitives partagees `cm-button`, `cm-input` et `cm-select`
+- les composants de saisie restent compatibles avec les formulaires reactifs Angular via `formControlName`
+- les styles de controles heritent du socle global du design system ; les styles locaux ne gerent que le calibrage fonctionnel des filtres
 
 ### Navigation et comportements UI
 - la liste des offres se charge a l'ouverture

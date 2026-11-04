@@ -1,37 +1,32 @@
 package com.cybermanager.application.services.session;
 
-import com.cybermanager.application.commands.session.StartSessionCommand;
-import com.cybermanager.application.commands.session.PauseSessionCommand;
-import com.cybermanager.application.commands.session.PaySessionCommand;
-import com.cybermanager.application.commands.session.RestartSessionsDayCommand;
-import com.cybermanager.application.commands.session.ResumeSessionCommand;
-import com.cybermanager.application.commands.session.StopSessionCommand;
 import com.cybermanager.application.services.sales.InvoiceNumberGenerator;
 import com.cybermanager.application.services.sales.InvoicePdfRenderer;
 import com.cybermanager.application.services.shared.BusinessException;
-import com.cybermanager.domain.model.customer.Customer;
-import com.cybermanager.domain.model.customer.CustomerId;
-import com.cybermanager.domain.model.customer.CustomerStatus;
-import com.cybermanager.domain.model.customer.CustomerType;
-import com.cybermanager.domain.model.customer.DebtRecord;
-import com.cybermanager.domain.model.sales.ConnectionPricingRule;
-import com.cybermanager.domain.model.sales.ConnectionPricingTier;
-import com.cybermanager.domain.model.sales.Sale;
-import com.cybermanager.domain.model.sales.SaleLine;
-import com.cybermanager.domain.model.sales.SaleType;
-import com.cybermanager.domain.model.session.CafeSession;
-import com.cybermanager.domain.model.session.SessionId;
-import com.cybermanager.domain.model.shared.Money;
-import com.cybermanager.domain.model.subscription.SubscriptionOffer;
-import com.cybermanager.domain.model.subscription.SubscriptionOfferId;
-import com.cybermanager.domain.model.subscription.SubscriptionOfferStatus;
-import com.cybermanager.domain.port.customer.CustomerRepository;
-import com.cybermanager.domain.port.customer.DebtRepository;
-import com.cybermanager.domain.port.sales.ConnectionPricingRepository;
-import com.cybermanager.domain.port.sales.InvoiceRepository;
-import com.cybermanager.domain.port.sales.SaleRepository;
-import com.cybermanager.domain.port.session.CafeSessionRepository;
-import com.cybermanager.domain.port.subscription.SubscriptionOfferRepository;
+import com.cybermanager.domain.businessobjects.customer.Customer;
+import com.cybermanager.domain.businessobjects.customer.DebtRecord;
+import com.cybermanager.domain.businessobjects.sales.ConnectionPricingRule;
+import com.cybermanager.domain.businessobjects.sales.Sale;
+import com.cybermanager.domain.businessobjects.session.CafeSession;
+import com.cybermanager.domain.businessobjects.subscription.SubscriptionOffer;
+import com.cybermanager.domain.commands.session.*;
+import com.cybermanager.domain.ports.customer.CustomerRepository;
+import com.cybermanager.domain.ports.customer.DebtRepository;
+import com.cybermanager.domain.ports.sales.ConnectionPricingRepository;
+import com.cybermanager.domain.ports.sales.InvoiceRepository;
+import com.cybermanager.domain.ports.sales.SaleRepository;
+import com.cybermanager.domain.ports.session.CafeSessionRepository;
+import com.cybermanager.domain.ports.subscription.SubscriptionOfferRepository;
+import com.cybermanager.domain.valueobjects.customer.CustomerId;
+import com.cybermanager.domain.valueobjects.customer.CustomerStatus;
+import com.cybermanager.domain.valueobjects.customer.CustomerType;
+import com.cybermanager.domain.valueobjects.sales.ConnectionPricingTier;
+import com.cybermanager.domain.valueobjects.sales.SaleLine;
+import com.cybermanager.domain.valueobjects.sales.SaleType;
+import com.cybermanager.domain.valueobjects.session.SessionId;
+import com.cybermanager.domain.valueobjects.shared.Money;
+import com.cybermanager.domain.valueobjects.subscription.SubscriptionOfferId;
+import com.cybermanager.domain.valueobjects.subscription.SubscriptionOfferStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -43,13 +38,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class SessionApplicationServiceTest {
+
     @Test
     void shouldStartSessionForWalkInAndCreateCustomer() {
         CafeSessionRepository sessionRepository = mock(CafeSessionRepository.class);
@@ -76,6 +68,7 @@ class SessionApplicationServiceTest {
 
     @Test
     void shouldStartSessionForSubscriberWithCredit() {
+
         CafeSessionRepository sessionRepository = mock(CafeSessionRepository.class);
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         ConnectionPricingRepository pricingRepository = mock(ConnectionPricingRepository.class);
@@ -95,6 +88,7 @@ class SessionApplicationServiceTest {
         assertEquals(customerUuid, result.customerId());
         assertEquals("Client Abonne", result.customerName());
         assertEquals("SUBSCRIBER", result.customerType());
+
     }
 
     @Test
@@ -123,7 +117,9 @@ class SessionApplicationServiceTest {
         assertEquals(customerUuid, result.customerId());
         assertEquals("SUBSCRIBER", result.customerType());
         assertEquals(0, result.remainingMinutes());
+
     }
+
 
     @Test
     void shouldRejectSecondCurrentSessionForSameCustomer() {
@@ -153,6 +149,7 @@ class SessionApplicationServiceTest {
         when(sessionRepository.findAll()).thenReturn(List.of(currentSession));
 
         assertThrows(BusinessException.class, () -> service.execute(new StartSessionCommand(customerUuid, null)));
+
     }
 
     @Test
@@ -183,6 +180,8 @@ class SessionApplicationServiceTest {
         when(sessionRepository.findAll()).thenReturn(List.of(stoppedUnpaidSession));
 
         assertThrows(BusinessException.class, () -> service.execute(new StartSessionCommand(customerUuid, null)));
+
+
     }
 
     @Test
@@ -222,6 +221,7 @@ class SessionApplicationServiceTest {
         assertEquals("Client Abonne", result.customerName());
         assertEquals("SUBSCRIBER", result.customerType());
         assertEquals(75, result.remainingMinutes());
+
     }
 
     @Test
@@ -264,7 +264,9 @@ class SessionApplicationServiceTest {
 
         assertEquals(new java.math.BigDecimal("4.00"), result.calculatedPrice());
         assertEquals(new java.math.BigDecimal("4.00"), result.totalAmountDue());
+
         verify(debtRepository, never()).save(any(DebtRecord.class));
+
     }
 
     @Test
@@ -317,8 +319,10 @@ class SessionApplicationServiceTest {
         assertEquals(new java.math.BigDecimal("4.00"), result.totalPaidAmount());
         verify(debtRepository).save(argThat((DebtRecord debt) ->
                 debt.label().startsWith("Depassement abonnement du ") &&
+
                         debt.amount().amount().compareTo(new java.math.BigDecimal("2.00")) == 0
         ));
+
     }
 
     @Test
@@ -360,9 +364,11 @@ class SessionApplicationServiceTest {
 
         var result = service.execute(new PaySessionCommand(sessionId.value(), new java.math.BigDecimal("8.00"), List.of(), false));
 
+
         assertEquals(new java.math.BigDecimal("7.50"), result.calculatedPrice());
         assertEquals(new java.math.BigDecimal("7.50"), result.totalPaidAmount());
         verify(debtRepository, never()).save(any(DebtRecord.class));
+
     }
 
     @Test
@@ -423,10 +429,12 @@ class SessionApplicationServiceTest {
         ));
 
         assertEquals(new java.math.BigDecimal("0.00"), result.calculatedPrice());
+
         assertEquals(new java.math.BigDecimal("7.50"), result.totalPaidAmount());
         assertEquals(30, result.remainingMinutes());
         verify(debtRepository, never()).save(any(DebtRecord.class));
         verify(customerRepository).save(argThat(saved -> saved.remainingMinutes() == 30));
+
     }
 
     @Test
@@ -466,6 +474,7 @@ class SessionApplicationServiceTest {
 
         assertEquals(1, result.sessions().size());
         assertEquals(new java.math.BigDecimal("4.00"), result.sessions().getFirst().totalAmountDue());
+
     }
 
     @Test
@@ -507,6 +516,7 @@ class SessionApplicationServiceTest {
         assertEquals(new java.math.BigDecimal("4.00"), result.calculatedPrice());
         assertEquals(new java.math.BigDecimal("4.00"), result.totalAmountDue());
         assertEquals("Alice", result.customerName());
+
     }
 
     @Test
@@ -535,6 +545,7 @@ class SessionApplicationServiceTest {
 
         when(sessionRepository.findAll()).thenReturn(List.of(pendingPaymentSession));
         when(customerRepository.findById(new CustomerId(customerUuid))).thenReturn(Optional.of(customer));
+
         when(saleRepository.findByCustomerId(any(CustomerId.class))).thenReturn(List.of());
         when(debtRepository.findByCustomerId(any(CustomerId.class))).thenReturn(List.of());
 
@@ -542,6 +553,7 @@ class SessionApplicationServiceTest {
 
         assertEquals(1, result.sessions().size());
         assertEquals(new java.math.BigDecimal("4.00"), result.sessions().getFirst().totalAmountDue());
+
     }
 
     @Test
@@ -579,6 +591,7 @@ class SessionApplicationServiceTest {
                 debt.label().startsWith("Session du ") &&
                         debt.amount().amount().compareTo(new java.math.BigDecimal("4.00")) == 0
         ));
+
     }
 
     @Test
@@ -617,6 +630,7 @@ class SessionApplicationServiceTest {
         when(customerRepository.findById(new CustomerId(customerUuid))).thenReturn(Optional.of(customer));
         when(sessionRepository.save(any(CafeSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(saleRepository.findByCustomerId(customer.id())).thenReturn(List.of(unpaidProductSale));
+
         when(debtRepository.findByCustomerId(customer.id())).thenReturn(List.of());
 
         var result = service.execute(new RestartSessionsDayCommand());
@@ -626,6 +640,7 @@ class SessionApplicationServiceTest {
                 debt.label().startsWith("2 x Snack du ")
                         && debt.amount().amount().compareTo(new java.math.BigDecimal("3.00")) == 0
         ));
+
     }
 
     @Test
@@ -675,6 +690,7 @@ class SessionApplicationServiceTest {
 
         assertEquals(1, result);
         verify(sessionRepository, atLeastOnce()).save(argThat((CafeSession saved) ->
+
                 saved.endedAt() != null && saved.paid()
         ));
         verify(debtRepository).save(argThat((DebtRecord debt) ->
@@ -685,6 +701,7 @@ class SessionApplicationServiceTest {
                 debt.label().startsWith("1 x Cafe du ")
                         && debt.amount().amount().compareTo(new java.math.BigDecimal("2.00")) == 0
         ));
+
     }
 
     @Test
@@ -729,17 +746,19 @@ class SessionApplicationServiceTest {
         when(sessionRepository.findAll()).thenReturn(List.of(session));
         when(customerRepository.findById(new CustomerId(customerUuid))).thenReturn(Optional.of(customer));
         when(pricingRepository.getCurrentRule()).thenReturn(new ConnectionPricingRule(List.of(
+
                 new ConnectionPricingTier(60, Money.of("3.00"))
         )));
         when(saleRepository.findByCustomerId(customer.id())).thenReturn(List.of(paidSale, debtSale));
         when(debtRepository.findByCustomerId(customer.id())).thenReturn(List.of(
-                DebtRecord.create(customer.id(), "1 x Snack du " + com.cybermanager.application.services.shared.DateTimeLabelFormatter.format(now.minusMinutes(10)), Money.of("1.50"), now.minusMinutes(9))
+                DebtRecord.createForSale(customer.id(), "1 x Snack du " + com.cybermanager.application.services.shared.DateTimeLabelFormatter.format(now.minusMinutes(10)), Money.of("1.50"), now.minusMinutes(9), debtSale.id().value())
         ));
 
         var result = service.execute();
 
         assertEquals(1, result.sessions().size());
         assertEquals(new java.math.BigDecimal("5.00"), result.sessions().getFirst().totalAmountDue());
+
     }
 
     @Test
@@ -780,6 +799,7 @@ class SessionApplicationServiceTest {
                 now.minusDays(1)
         );
 
+
         when(sessionRepository.findAll()).thenReturn(List.of(session));
         when(customerRepository.findById(new CustomerId(customerUuid))).thenReturn(Optional.of(customer));
         when(pricingRepository.getCurrentRule()).thenReturn(new ConnectionPricingRule(List.of(
@@ -792,6 +812,7 @@ class SessionApplicationServiceTest {
 
         assertEquals(1, result.sessions().size());
         assertEquals(new java.math.BigDecimal("14.00"), result.sessions().getFirst().totalAmountDue());
+
     }
 
     @Test
@@ -837,6 +858,7 @@ class SessionApplicationServiceTest {
                 LocalDateTime.now().minusMinutes(5),
                 false,
                 0,
+
                 0,
                 Money.of("0")
         );
@@ -844,6 +866,7 @@ class SessionApplicationServiceTest {
 
         var resumed = service.execute(new ResumeSessionCommand(sessionId.value()));
         assertEquals(false, resumed.paused());
+
     }
 
     private SessionApplicationService service(
@@ -865,5 +888,7 @@ class SessionApplicationServiceTest {
                 mock(InvoicePdfRenderer.class),
                 mock(InvoiceNumberGenerator.class)
         );
+
     }
+
 }

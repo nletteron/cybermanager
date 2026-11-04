@@ -42,6 +42,12 @@ Permettre la gestion d'une grille de tarifs de connexion basee sur des plages de
 - un prix doit etre strictement positif
 - une duree ne peut etre definie qu'une seule fois dans la grille
 - la grille tarifaire est ordonnee par duree croissante
+- une base neuve ne contient aucune grille tarifaire ni aucun palier par defaut
+- en l'absence de grille active, l'API de lecture retourne une collection vide
+- aucun fallback de tarifs ne doit etre defini dans le backend ou le frontend
+- les tarifs ne doivent jamais etre persistes dans `localStorage` ou `sessionStorage`
+- une grille ne devient active qu'apres validation explicite par un administrateur
+- une seule grille tarifaire peut etre active a un instant donne
 - la grille tarifaire est la source de verite pour la vente de temps
 - la meme grille tarifaire est la source de verite pour la facturation d'une session journaliere
 - la facturation doit reutiliser les plages configurees au moment du calcul
@@ -73,7 +79,10 @@ Permettre la gestion d'une grille de tarifs de connexion basee sur des plages de
 ### Infrastructure
 
 - ConnectionPricingJpaRepository
+- ConnectionPricingGridJpaRepository
 - ConnectionPricingRepositoryAdapter
+- `cm_connection_pricing_grids`
+- `cm_connection_pricing_tiers`
 
 ### API
 
@@ -105,6 +114,7 @@ Permettre la gestion d'une grille de tarifs de connexion basee sur des plages de
 - chaque champ de saisie possede un label explicite
 - apres ajout d'une plage, les champs de saisie sont remis a vide ou a leur valeur par defaut
 - la grille active s'affiche immediatement apres chargement
+- si aucune grille n'a encore ete configuree, l'ecran affiche un etat vide sans valeurs prechargees
 - l'utilisateur peut retirer une plage avant enregistrement
 - l'utilisateur peut valider l'ensemble de la grille en une action
 - la page affiche aussi le total en minutes de chaque palier pour faciliter le controle
@@ -129,5 +139,6 @@ Permettre la gestion d'une grille de tarifs de connexion basee sur des plages de
 - l'arret d'une session journaliere utilise la meme grille configuree
 - l'ecran ventes affiche la grille active et renvoie vers l'ecran dedie de configuration
 - la lecture de la grille active est possible sans modification
+- une base vide affiche `Aucune plage definie pour le moment` et aucun tarif implicite
 - un administrateur peut simuler un cout de connexion pour une duree arbitraire sans enregistrer de changement
 - l'ecran sessions affiche le total `temps + achats produits` apres arret d'une session

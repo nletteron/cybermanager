@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend DDD Guard"
+  short_description: "Validate backend DDD architecture rules"
+  default_prompt: "Use $backend-ddd-guard to review CyberManager backend architecture compliance."

@@ -13,4 +13,5 @@ public record DayCustomerHistoryView(
         BigDecimal collectedTotal,
         String sessionState
 ) {
+
 }

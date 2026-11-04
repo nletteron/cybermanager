@@ -1,9 +1,9 @@
 package com.cybermanager.application.services.sales;
 
-import com.cybermanager.domain.model.company.CompanyProfile;
-import com.cybermanager.domain.model.sales.Invoice;
-import com.cybermanager.domain.model.sales.InvoiceLine;
-import com.cybermanager.domain.port.company.CompanyProfileRepository;
+import com.cybermanager.domain.businessobjects.company.CompanyProfile;
+import com.cybermanager.domain.businessobjects.sales.Invoice;
+import com.cybermanager.domain.ports.company.CompanyProfileRepository;
+import com.cybermanager.domain.valueobjects.sales.InvoiceLine;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -19,6 +19,7 @@ import java.util.Optional;
 
 @Service
 public class InvoicePdfRenderer {
+
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final CompanyProfileRepository companyProfileRepository;
@@ -57,24 +58,28 @@ public class InvoicePdfRenderer {
 
     private float writeCompany(PDPageContentStream content, float y, Optional<CompanyProfile> company) throws IOException {
         write(content, Standard14Fonts.FontName.HELVETICA_BOLD, 12, 40, y, "Entreprise");
+        float result;
+
         if (company.isEmpty()) {
             write(content, Standard14Fonts.FontName.HELVETICA, 10, 40, y - 14, "Entreprise non configuree");
-            return y - 36;
+            result = y - 36;
+        } else {
+            CompanyProfile current = company.get();
+            float lineY = y - 14;
+            lineY = writeOptional(content, lineY, current.legalName());
+            lineY = writeOptional(content, lineY, current.addressLine1());
+            lineY = writeOptional(content, lineY, current.addressLine2());
+            lineY = writeOptional(content, lineY, current.postalCode() == null && current.city() == null
+                    ? null
+                    : ((current.postalCode() == null ? "" : current.postalCode() + " ") + (current.city() == null ? "" : current.city())).trim());
+            lineY = writeOptional(content, lineY, current.country());
+            lineY = writeOptional(content, lineY, current.siret() == null ? null : "SIRET : " + current.siret());
+            lineY = writeOptional(content, lineY, current.phone() == null ? null : "Tel : " + current.phone());
+            lineY = writeOptional(content, lineY, current.email() == null ? null : "Email : " + current.email());
+            result = lineY - 8;
         }
 
-        CompanyProfile current = company.get();
-        float lineY = y - 14;
-        lineY = writeOptional(content, lineY, current.legalName());
-        lineY = writeOptional(content, lineY, current.addressLine1());
-        lineY = writeOptional(content, lineY, current.addressLine2());
-        lineY = writeOptional(content, lineY, current.postalCode() == null && current.city() == null
-                ? null
-                : ((current.postalCode() == null ? "" : current.postalCode() + " ") + (current.city() == null ? "" : current.city())).trim());
-        lineY = writeOptional(content, lineY, current.country());
-        lineY = writeOptional(content, lineY, current.siret() == null ? null : "SIRET : " + current.siret());
-        lineY = writeOptional(content, lineY, current.phone() == null ? null : "Tel : " + current.phone());
-        lineY = writeOptional(content, lineY, current.email() == null ? null : "Email : " + current.email());
-        return lineY - 8;
+        return result;
     }
 
     private float writeCustomer(PDPageContentStream content, Invoice invoice, float y) throws IOException {
@@ -105,11 +110,16 @@ public class InvoicePdfRenderer {
     }
 
     private float writeOptional(PDPageContentStream content, float y, String value) throws IOException {
+        float result;
+
         if (value == null || value.isBlank()) {
-            return y;
+            result = y;
+        } else {
+            write(content, Standard14Fonts.FontName.HELVETICA, 10, 40, y, value);
+            result = y - 13;
         }
-        write(content, Standard14Fonts.FontName.HELVETICA, 10, 40, y, value);
-        return y - 13;
+
+        return result;
     }
 
     private void write(PDPageContentStream content, Standard14Fonts.FontName fontName, float size, float x, float y, String value) throws IOException {
@@ -119,4 +129,5 @@ public class InvoicePdfRenderer {
         content.showText(value);
         content.endText();
     }
+
 }
